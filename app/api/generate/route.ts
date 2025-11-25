@@ -1,141 +1,74 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { getDesignSystemPrompt } from "@/config/design-system"
+import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { getDesignSystemPrompt } from "@/config/design-system";
 
-async function generateWebpageOnServer(prompt: string): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
-  if (!apiKey) {
-    throw new Error("ANTHROPIC_API_KEY is not set")
-  }
-  
-  // Log API key status (without exposing the actual key)
-  console.log("[v0] API key status:", {
-    exists: !!apiKey,
-    length: apiKey.length,
-    startsWithSkAnt: apiKey.startsWith("sk-ant-"),
-    firstChars: apiKey.substring(0, 7),
-  })
-  
-  if (!apiKey.startsWith("sk-ant-")) {
-    console.warn("[v0] Warning: API key format may be incorrect. Anthropic API keys typically start with 'sk-ant-'")
-  }
+export const runtime = "nodejs"; // VERY IMPORTANT → Edge runtime breaks env vars!
 
-  const designSystemPrompt = getDesignSystemPrompt()
+export async function POST(req: NextRequest) {
+  try {
+    const { prompt } = await req.json();
 
-  const systemPrompt = `You are an expert web developer. Generate complete, valid HTML pages based on user requests.
+    if (!prompt) {
+      return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
+    }
+
+    // Load API key
+    const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "API key missing in environment variables" },
+        { status: 500 }
+      );
+    }
+
+    // Initialize client
+    const client = new Anthropic({
+      apiKey,
+    });
+
+    const designSystemPrompt = getDesignSystemPrompt();
+
+    const systemPrompt = `
+You are an expert web developer. Generate complete, valid HTML pages based on user requests.
 
 ${designSystemPrompt}
 
 IMPORTANT OUTPUT RULES:
-- Return ONLY the complete HTML code (including <!DOCTYPE html>, <html>, <head>, and <body> tags)
-- Include inline CSS in a <style> tag in the <head>
-- The CSS MUST follow the design system rules above
-- Make the page responsive and professional
-- DO NOT include any explanations, markdown code blocks, or extra text
-- The output should be ready to render directly in an iframe
+- Return ONLY complete HTML (<html>, <head>, <body>)
+- Use inline CSS inside <style> tag
+- Follow the design system strictly
+- No explanations, no markdown, no backticks
+- Final output must render perfectly inside an iframe
+`;
 
-Create beautiful, functional webpages with good typography, spacing, and visual hierarchy while strictly following the design system.`
-
-  console.log("[v0] Calling Claude API with model: claude-sonnet-4-5")
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-5",
-      max_tokens: 8192,
+    // Call Anthropic (latest API format)
+    const response = await client.messages.create({
+      model: "claude-3-5-sonnet-latest",
+      max_tokens: 8000,
+      system: systemPrompt,
       messages: [
         {
           role: "user",
           content: prompt,
         },
       ],
-      system: systemPrompt,
-    }),
-  })
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    let errorData
-    try {
-      errorData = JSON.parse(errorText)
-    } catch {
-      errorData = { error: { message: errorText } }
-    }
-    
-    console.error("[v0] Anthropic API error:", {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorData,
-    })
-    
-    if (response.status === 401) {
-      const errorMessage = errorData?.error?.message || "Invalid API key"
-      throw new Error(
-        `401 Unauthorized: ${errorMessage}. ` +
-        "Please verify your ANTHROPIC_API_KEY is correct and set in Vercel environment variables. " +
-        "Make sure to redeploy after adding the variable."
-      )
-    }
-    
-    throw new Error(`Claude API error: ${response.status} ${response.statusText}`)
-  }
+    const text = response.content[0]?.text || "";
 
-  const data = await response.json()
-  console.log("[v0] Claude API response received successfully")
+    // Clean backticks if any appear
+    const html = text
+      .replace(/^```html/, "")
+      .replace(/^```/, "")
+      .replace(/```$/, "")
+      .trim();
 
-  const content = data.content[0]
-
-  if (content?.type === "text") {
-    let html = content.text.trim()
-
-    if (html.startsWith("```html")) {
-      html = html.replace(/^```html\n/, "").replace(/\n```$/, "")
-    } else if (html.startsWith("```")) {
-      html = html.replace(/^```\n/, "").replace(/\n```$/, "")
-    }
-
-    return html
-  }
-
-  throw new Error("Unexpected response format from Claude")
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    console.log("[v0] API route called")
-    const body = await request.json()
-    const { prompt } = body
-
-    if (!prompt) {
-      return NextResponse.json({ error: "Missing prompt" }, { status: 400 })
-    }
-
-    const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
-    if (!apiKey) {
-      console.error("[v0] ANTHROPIC_API_KEY is missing from environment variables")
-      return NextResponse.json(
-        {
-          error: "ANTHROPIC_API_KEY not configured. Please add it in Vercel's Environment Variables settings and redeploy.",
-        },
-        { status: 500 },
-      )
-    }
-    
-    // Log that API key exists (for debugging, without exposing the key)
-    console.log("[v0] API key found in environment, length:", apiKey.length)
-
-    console.log("[v0] Generating webpage with prompt:", prompt.substring(0, 50) + "...")
-    const html = await generateWebpageOnServer(prompt)
-
-    console.log("[v0] Webpage generated successfully")
-    return NextResponse.json({ html })
+    return NextResponse.json({ html }, { status: 200 });
   } catch (error: any) {
-    console.error("[v0] Error generating webpage:", error)
-
-    return NextResponse.json({ error: error.message || "Failed to generate webpage" }, { status: 500 })
+    console.error("Claude API Error:", error);
+    return NextResponse.json(
+      { error: error?.message || "Server error" },
+      { status: 500 }
+    );
   }
 }
