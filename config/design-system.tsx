@@ -24,13 +24,12 @@ IMPORTANT RULES:
   - .btnWhite, .btnBlack and their variants (.outline, .blurBg, .borderGradient, .btnMd, .btnSm, etc.)
 - For arrow buttons, use:
   - .arrowWrap, .arrow1, .arrow2, .arrowhorizontal, .arrowhorizontalClone, .arrowWrapper, .arrowMain, .arrowClone
+- For carousels/sliders, use Swiper.js with the provided Swiper classes and styling
 
 /* ============================================
    MASTERS' UNION COLOR TOKENS
    ============================================ */
 :root {
-  --yellow: #FAD133;
-  --darkYellow: #C5B64D;
   --white: #ffffff;
   --white3: #FAFAFA;
   --white2: #e6e6e6;
@@ -57,6 +56,7 @@ IMPORTANT RULES:
    FONT FAMILY TOKENS
    ============================================ */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css');
 
 :root {
   --go-thin: 'go-thin';
@@ -448,6 +448,7 @@ input:focus, textarea:focus {
   width: 22px;
   height: 22px;
   overflow: hidden;
+  display: flex;
 }
 
 /* Initial positions */
@@ -851,6 +852,215 @@ input:focus, textarea:focus {
     top: -2px;
   }
 }
+
+
+/* ============================================
+   SWIPER.JS CAROUSEL SYSTEM
+   ============================================ */
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-wrapper {
+  display: flex;
+}
+
+.swiper-slide {
+  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* Swiper Navigation Buttons */
+.swiper-button-next,
+.swiper-button-prev {
+  width: 48px;
+  height: 48px;
+  background: var(--black);
+  border-radius: 50%;
+  color: var(--white);
+  border: 1px solid var(--grey3);
+  transition: all 0.3s ease;
+}
+
+.swiper-button-next:after,
+.swiper-button-prev:after {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  background: var(--black5);
+  border-color: var(--yellow);
+}
+
+.swiper-button-next.swiper-button-disabled,
+.swiper-button-prev.swiper-button-disabled {
+  opacity: 0.35;
+  cursor: auto;
+  pointer-events: none;
+}
+
+/* Swiper Pagination */
+.swiper-pagination {
+  position: relative;
+  text-align: center;
+  margin-top: 30px;
+}
+
+.swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  background: var(--grey);
+  opacity: 0.5;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+  background: var(--yellow);
+  opacity: 1;
+  width: 24px;
+  border-radius: 5px;
+}
+
+/* Swiper Scrollbar */
+.swiper-scrollbar {
+  background: var(--grey3);
+  border-radius: 10px;
+  height: 4px;
+}
+
+.swiper-scrollbar-drag {
+  background: var(--yellow);
+  border-radius: 10px;
+}
+
+/* Custom Swiper Container Styles */
+.swiper-container {
+  padding-bottom: 50px;
+}
+
+.swiper-container-dark .swiper-button-next,
+.swiper-container-dark .swiper-button-prev {
+  background: var(--white);
+  color: var(--black);
+  border-color: var(--white2);
+}
+
+.swiper-container-dark .swiper-button-next:hover,
+.swiper-container-dark .swiper-button-prev:hover {
+  background: var(--white3);
+  border-color: var(--yellow);
+}
+
+.swiper-container-dark .swiper-pagination-bullet {
+  background: var(--white);
+  opacity: 0.3;
+}
+
+.swiper-container-dark .swiper-pagination-bullet-active {
+  background: var(--yellow);
+  opacity: 1;
+}
+
+/* Swiper with Cards */
+.swiper-card {
+  background: var(--black3);
+  border: 1px solid var(--grey3);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  height: auto;
+}
+
+/* Swiper Navigation with Custom Arrows */
+.swiper-nav-custom {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.swiper-nav-custom .swiper-button-next,
+.swiper-nav-custom .swiper-button-prev {
+  position: relative;
+  margin: 0;
+  top: auto;
+  left: auto;
+  right: auto;
+}
+
+/* Mobile Swiper Adjustments */
+@media (max-width: 767px) {
+  .swiper-button-next,
+  .swiper-button-prev {
+    width: 40px;
+    height: 40px;
+  }
+
+  .swiper-button-next:after,
+  .swiper-button-prev:after {
+    font-size: 14px;
+  }
+
+  .swiper-pagination {
+    margin-top: 20px;
+  }
+
+  .swiper-pagination-bullet {
+    width: 8px;
+    height: 8px;
+  }
+
+  .swiper-pagination-bullet-active {
+    width: 20px;
+  }
+}
+
+/* Swiper Usage Example Structure:
+<div class="swiper">
+  <div class="swiper-wrapper">
+    <div class="swiper-slide">
+      <!-- Slide content -->
+    </div>
+    <div class="swiper-slide">
+      <!-- Slide content -->
+    </div>
+  </div>
+  <div class="swiper-pagination"></div>
+  <div class="swiper-button-prev"></div>
+  <div class="swiper-button-next"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+  const swiper = new Swiper('.swiper', {
+    slidesPerView: 1,
+    spaceBetween: 30,
+    loop: true,
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev',
+    },
+    breakpoints: {
+      768: {
+        slidesPerView: 2,
+      },
+      1024: {
+        slidesPerView: 3,
+      },
+    },
+  });
+</script>
+*/
 
 
 /* ============================================
