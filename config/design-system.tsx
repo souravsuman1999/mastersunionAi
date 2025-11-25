@@ -166,11 +166,7 @@ body {
   padding: 0;
   background: var(--black2);
   color: var(--white);
-  font-family: var(--go-regular), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-h1, h2, h3 {
-  font-family: 'Fraunces', serif;
+  font-family: var(--go-regular);
 }
 
 h4, h5, h6 {
@@ -180,7 +176,9 @@ h4, h5, h6 {
 p, li, span {
   font-family: var(--go-regular);
 }
-
+section{
+  padding: 80px 0;
+}
 
 /* ============================================
    TYPOGRAPHY UTILITY CLASSES (HEADINGS / HERO)
@@ -191,7 +189,7 @@ p, li, span {
 
 .fr-TitleItalic {
   font: italic 60px/1.2 "Fraunces", serif;
-  font-weight: 350;
+  font-weight: 400;
 }
 
 .positionrel {
@@ -221,17 +219,17 @@ p, li, span {
 
 .fr-HeadingItalic {
   font: italic 34px/1.2 "Fraunces", serif;
-  font-weight: 350;
+  font-weight: 400;
 }
 
 .fr-Heading {
   font: normal 34px/1.1 "Fraunces", serif;
-  font-weight: 350;
+  font-weight: 400;
 }
 
 .fr-BreatherHeadingTemp {
   font: italic 50px/1.2 "Fraunces", serif;
-  font-weight: 350;
+  font-weight: 400;
 }
 
 .go-BlockHeading {
@@ -252,7 +250,7 @@ p, li, span {
 
 .fr-BreatherHeading {
   font: italic 32px/1.2 "Fraunces", serif;
-  font-weight: 350;
+  font-weight: 400;
 }
 
 .textGradient {
@@ -265,13 +263,17 @@ p, li, span {
 
 /* Mobile typography adjustments */
 @media (max-width: 767px) {
+
+section{
+  padding: 60px 0;
+}
   .go-BreatherHeading {
     font: normal 22px/1.2 var(--go-regular);
   }
 
   .fr-BreatherHeading {
     font: italic 24px/1.2 "Fraunces", serif;
-    font-weight: 350;
+    font-weight: 400;
   }
 
   .go-HeroSubtitle {
@@ -284,12 +286,12 @@ p, li, span {
 
   .fr-TitleItalic {
     font: italic 32px/1.2 "Fraunces", serif;
-    font-weight: 350;
+    font-weight: 400;
   }
 
   .fr-Heading {
     font: normal 24px/1.1 "Fraunces", serif;
-    font-weight: 350;
+    font-weight: 400;
   }
 
   .go-BreatherHeadingTemp {
@@ -460,6 +462,7 @@ input:focus, textarea:focus {
 .arrow2 {
   transform: translate(-100%, 100%);
   z-index: 1;
+  position: absolute;
 }
 
 .arrowhorizontal {

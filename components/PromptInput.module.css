@@ -39,6 +39,7 @@
   resize: none;
   outline: none;
   line-height: 1.6;
+  overflow-y: hidden;
 }
 
 .textarea::placeholder {

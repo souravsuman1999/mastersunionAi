@@ -1,22 +1,40 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useRef } from "react"
 import styles from "./PromptInput.module.css"
 
 interface PromptInputProps {
   onGenerate: (prompt: string) => void
   isLoading: boolean
+  value: string
+  onPromptChange: (value: string) => void
   error?: string
+  isReadOnly?: boolean
 }
 
-export default function PromptInput({ onGenerate, isLoading, error }: PromptInputProps) {
-  const [prompt, setPrompt] = useState("")
+export default function PromptInput({
+  onGenerate,
+  isLoading,
+  value,
+  onPromptChange,
+  error,
+  isReadOnly,
+}: PromptInputProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    textarea.style.height = "auto"
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }, [value])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (prompt.trim()) {
-      onGenerate(prompt)
+    if (value.trim()) {
+      onGenerate(value)
     }
   }
 
@@ -25,18 +43,19 @@ export default function PromptInput({ onGenerate, isLoading, error }: PromptInpu
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.inputBox}>
           <textarea
+            ref={textareaRef}
             className={styles.textarea}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            value={value}
+            onChange={(e) => onPromptChange(e.target.value)}
             placeholder="Ask Masters' Union AI to create a webpage..."
             rows={1}
-            disabled={isLoading}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault()
                 handleSubmit(e)
               }
             }}
+            disabled={isLoading || isReadOnly}
           />
           <div className={styles.inputActions}>
             {/* <button type="button" className={styles.iconButton} title="Add attachment" disabled={isLoading}>
@@ -46,7 +65,11 @@ export default function PromptInput({ onGenerate, isLoading, error }: PromptInpu
               Attach
             </button> */}
 
-            <button type="submit" className={styles.submitButton} disabled={isLoading || !prompt.trim()}>
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={isLoading || !value.trim() || !!isReadOnly}
+            >
               {isLoading ? (
                 <div className={styles.spinner} />
               ) : (

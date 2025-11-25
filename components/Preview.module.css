@@ -15,6 +15,7 @@
   background: rgba(10, 10, 10, 0.8);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--grey3);
+  gap: 16px;
 }
 
 .titleSection {
@@ -43,8 +44,35 @@
   font-family: var(--go-medium);
 }
 
-/* More polished button with icon support */
-.copyButton {
+.versionLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-family: var(--go-medium);
+  color: var(--yellow);
+  padding: 4px 8px;
+  background: rgba(250, 209, 51, 0.1);
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.editModeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+/* Primary edit toggle */
+.editButton {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -61,18 +89,77 @@
   box-shadow: 0 2px 8px rgba(250, 209, 51, 0.2);
 }
 
-.copyButton:hover:not(:disabled) {
+.editButton:hover:not(:disabled) {
   background: var(--darkYellow);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(250, 209, 51, 0.3);
 }
 
-.copyButton:disabled {
+.editButton:disabled {
   background: var(--grey3);
   color: var(--grey);
   cursor: not-allowed;
   opacity: 0.5;
   box-shadow: none;
+}
+
+.editButtonActive {
+  background: transparent;
+  color: var(--yellow);
+  border: 1px solid var(--yellow);
+  box-shadow: 0 0 0 1px rgba(250, 209, 51, 0.2);
+}
+
+.editChip {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.15);
+  color: var(--black);
+}
+
+.editChipActive {
+  background: rgba(250, 209, 51, 0.2);
+  color: var(--yellow);
+}
+
+.editStatus {
+  font-size: 12px;
+  color: var(--grey10);
+  font-family: var(--go-medium);
+  letter-spacing: 0.3px;
+}
+
+.editStatusActive {
+  color: var(--yellow);
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--go-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.secondaryButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .previewWrapper {
@@ -195,8 +282,24 @@
     font-size: 20px;
   }
 
-  .copyButton {
+  .headerActions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .editModeGroup {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .editButton,
+  .secondaryButton {
     width: 100%;
     justify-content: center;
+  }
+
+  .editStatus {
+    text-align: left;
   }
 }

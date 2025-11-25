@@ -1,0 +1,143 @@
+.page {
+  min-height: 100vh;
+  background: var(--black);
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 42px;
+  background: rgba(10, 10, 10, 0.95);
+  border-bottom: 1px solid var(--grey3);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--go-medium);
+}
+
+.title {
+  margin: 6px 0 0 0;
+  font-size: 28px;
+  font-family: var(--go-bold);
+  color: var(--white);
+}
+
+.backLink {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--white);
+  font-family: var(--go-medium);
+  text-decoration: none;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.backLink:hover {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  font-family: var(--go-bold);
+  font-size: 14px;
+  background: var(--yellow);
+  color: var(--black);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 6px 18px rgba(250, 209, 51, 0.25);
+}
+
+.copyButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--darkYellow);
+  box-shadow: 0 10px 24px rgba(250, 209, 51, 0.35);
+}
+
+.copyButton:disabled {
+  background: var(--grey3);
+  color: var(--grey8);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.frameWrapper {
+  flex: 1;
+  background: var(--white);
+  position: relative;
+}
+
+.mulogo{
+    max-width: 9%;
+  }
+
+.fullFrame {
+  width: 100%;
+  height: 100vh;
+  border: none;
+  display: block;
+  background: var(--white);
+}
+
+.messageCard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--black);
+  background: #f5f5f5;
+  font-family: var(--go-medium);
+  text-align: center;
+  padding: 32px;
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    padding: 20px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .backLink {
+    width: 100%;
+    text-align: center;
+  }
+
+  .toolbarActions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copyButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
+

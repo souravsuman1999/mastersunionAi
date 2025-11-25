@@ -325,3 +325,18 @@ textarea,
 select {
   font-family: inherit;
 }
+[contenteditable="true"], 
+input, 
+textarea {
+  caret-color: white;    /* Cursor color white */
+}
+
+/* Cursor width change (Chrome/WebKit browsers) */
+@supports (-webkit-caret-color: white) {
+  [contenteditable="true"] {
+    caret-color: white;
+    /* width ko visually thick banane ka trick */
+    text-shadow: 0 0 0 white;
+  }
+}
+

@@ -5,16 +5,54 @@ import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
 import styles from "./page.module.css"
 
+type PromptVersion = {
+  id: string
+  prompt: string
+  html: string
+  createdAt: string
+  versionNumber: number
+}
+
+const timestampFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+})
+
+const formatTimestamp = (isoDate: string) => timestampFormatter.format(new Date(isoDate))
+
+const generateVersionId = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID()
+  }
+  return `version-${Date.now()}`
+}
+
 export default function Home() {
   const [generatedHtml, setGeneratedHtml] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [hasGenerated, setHasGenerated] = useState(false)
+  const [currentPrompt, setCurrentPrompt] = useState("")
+  const [versions, setVersions] = useState<PromptVersion[]>([])
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
+  const [versionCounter, setVersionCounter] = useState(0)
+  const [isPreviewEditMode, setIsPreviewEditMode] = useState(false)
+
+  const selectedVersion = selectedVersionId ? versions.find((version) => version.id === selectedVersionId) : undefined
 
   const handleGenerate = async (prompt: string) => {
     setHasGenerated(true)
     setIsLoading(true)
     setError("")
+    setCurrentPrompt(prompt)
+
+    const payload: { prompt: string; baseHtml?: string } = { prompt }
+    const baseHtmlCandidate = selectedVersion?.html ?? generatedHtml
+    if (baseHtmlCandidate?.trim()) {
+      payload.baseHtml = baseHtmlCandidate
+    }
 
     try {
       const response = await fetch("/api/generate", {
@@ -22,7 +60,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify(payload),
       })
 
       const contentType = response.headers.get("content-type")
@@ -39,6 +77,19 @@ export default function Home() {
       }
 
       setGeneratedHtml(data.html)
+      const nextVersionNumber = versionCounter + 1
+      setVersionCounter(nextVersionNumber)
+
+      const newVersion: PromptVersion = {
+        id: generateVersionId(),
+        prompt,
+        html: data.html,
+        createdAt: new Date().toISOString(),
+        versionNumber: nextVersionNumber,
+      }
+
+      setVersions((prev) => [newVersion, ...prev])
+      setSelectedVersionId(newVersion.id)
     } catch (err: any) {
       console.error("[v0] Error in handleGenerate:", err)
       setError(err.message || "An error occurred")
@@ -46,6 +97,29 @@ export default function Home() {
       setIsLoading(false)
     }
   }
+
+  const handleVersionSelect = (versionId: string) => {
+    const version = versions.find((entry) => entry.id === versionId)
+    if (!version) {
+      return
+    }
+
+    setSelectedVersionId(versionId)
+    setGeneratedHtml(version.html)
+    setCurrentPrompt(version.prompt)
+  }
+
+  const handlePreviewHtmlChange = (updatedHtml: string) => {
+    setGeneratedHtml(updatedHtml)
+
+    if (selectedVersionId) {
+      setVersions((prev) =>
+        prev.map((version) => (version.id === selectedVersionId ? { ...version, html: updatedHtml } : version))
+      )
+    }
+  }
+
+  const activeVersionLabel = selectedVersion ? `Version ${selectedVersion.versionNumber}` : undefined
 
   if (!hasGenerated) {
     return (
@@ -57,7 +131,14 @@ export default function Home() {
           <p className={styles.welcomeSubtitle}>Create webpages by chatting with AI</p>
 
           <div className={styles.welcomePromptArea}>
-            <PromptInput onGenerate={handleGenerate} isLoading={isLoading} error={error} />
+            <PromptInput
+              onGenerate={handleGenerate}
+              isLoading={isLoading}
+              error={error}
+              value={currentPrompt}
+              onPromptChange={setCurrentPrompt}
+              isReadOnly={isPreviewEditMode}
+            />
           </div>
         </div>
       </div>
@@ -67,13 +148,68 @@ export default function Home() {
   return (
     <div className={styles.container}>
       <main className={styles.main}>
-        <div className={styles.previewSection}>
-          <Preview html={generatedHtml} isLoading={isLoading} />
-        </div>
+        <section className={styles.promptSection}>
+          <div className={styles.promptSectionInner}>
+            <div className={styles.promptHeader}>
+              <div>
+                <p className={styles.promptEyebrow}>Prompt</p>
+                <h2 className={styles.promptTitle}>Describe the page you want to build</h2>
+              </div>
+            </div>
 
-        <div className={styles.promptSection}>
-          <PromptInput onGenerate={handleGenerate} isLoading={isLoading} error={error} />
-        </div>
+            <PromptInput
+              onGenerate={handleGenerate}
+              isLoading={isLoading}
+              error={error}
+              value={currentPrompt}
+              onPromptChange={setCurrentPrompt}
+              isReadOnly={isPreviewEditMode}
+            />
+
+            <div className={styles.historyHeader}>
+              <div>
+                <p className={styles.promptEyebrow}>History</p>
+                <h3 className={styles.historyTitle}>Prompt versions</h3>
+              </div>
+              {selectedVersion && <span className={styles.historyActiveLabel}>Viewing {activeVersionLabel}</span>}
+            </div>
+
+            <div className={styles.historyList}>
+              {versions.length === 0 ? (
+                <div className={styles.historyEmpty}>
+                  <p>Each prompt you generate will appear here for quick access.</p>
+                </div>
+              ) : (
+                versions.map((version) => (
+                  <button
+                    type="button"
+                    key={version.id}
+                    onClick={() => handleVersionSelect(version.id)}
+                    className={`${styles.versionItem} ${
+                      selectedVersionId === version.id ? styles.versionItemActive : ""
+                    }`}
+                  >
+                    <div className={styles.versionHeader}>
+                      <span className={styles.versionTitle}>Version {version.versionNumber}</span>
+                      <span className={styles.versionTimestamp}>{formatTimestamp(version.createdAt)}</span>
+                    </div>
+                    <p className={styles.versionPrompt}>{version.prompt}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.previewSection}>
+          <Preview
+            html={generatedHtml}
+            isLoading={isLoading}
+            activeVersionLabel={activeVersionLabel}
+            onHtmlChange={handlePreviewHtmlChange}
+            onEditModeChange={setIsPreviewEditMode}
+          />
+        </section>
       </main>
     </div>
   )

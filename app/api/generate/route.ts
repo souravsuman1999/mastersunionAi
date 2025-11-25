@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDesignSystemPrompt } from "@/config/design-system"
 
-async function generateWebpageOnServer(prompt: string): Promise<string> {
+async function generateWebpageOnServer(prompt: string, baseHtml?: string): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not set")
@@ -20,6 +20,7 @@ async function generateWebpageOnServer(prompt: string): Promise<string> {
   }
 
   const designSystemPrompt = getDesignSystemPrompt()
+  const hasBaseHtml = typeof baseHtml === "string" && baseHtml.trim().length > 0
 
   const systemPrompt = `You are an expert web developer. Generate complete, valid HTML pages based on user requests.
 
@@ -32,10 +33,27 @@ IMPORTANT OUTPUT RULES:
 - Make the page responsive and professional
 - DO NOT include any explanations, markdown code blocks, or extra text
 - The output should be ready to render directly in an iframe
+- If existing HTML is provided, treat it as the starting point and apply the requested changes without discarding useful sections that are still relevant
 
 Create beautiful, functional webpages with good typography, spacing, and visual hierarchy while strictly following the design system.`
 
   console.log("[v0] Calling Claude API with model: claude-sonnet-4-5")
+  console.log("[v0] Generation mode:", hasBaseHtml ? "edit-existing" : "create-new")
+  if (hasBaseHtml) {
+    console.log("[v0] Base HTML length:", baseHtml?.length ?? 0)
+  }
+
+  const editAwarePrompt = hasBaseHtml
+    ? `You are updating an existing webpage. Apply the user's new request to the current HTML while keeping its overall structure, design tokens, and any content that is still applicable.
+
+REQUEST (what to change or add):
+${prompt}
+
+CURRENT_HTML (update this):
+${baseHtml}
+
+Return the complete updated HTML document (including <!DOCTYPE>, <html>, <head>, <body>) with inline CSS that follows the design system.`
+    : prompt
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -50,7 +68,7 @@ Create beautiful, functional webpages with good typography, spacing, and visual 
       messages: [
         {
           role: "user",
-          content: prompt,
+          content: editAwarePrompt,
         },
       ],
       system: systemPrompt,
@@ -87,28 +105,32 @@ Create beautiful, functional webpages with good typography, spacing, and visual 
   const data = await response.json()
   console.log("[v0] Claude API response received successfully")
 
-  const content = data.content[0]
+  const textSegments: string[] = Array.isArray(data?.content)
+    ? data.content
+        .filter((segment: any) => segment?.type === "text" && typeof segment.text === "string")
+        .map((segment: any) => segment.text)
+    : []
 
-  if (content?.type === "text") {
-    let html = content.text.trim()
-
-    if (html.startsWith("```html")) {
-      html = html.replace(/^```html\n/, "").replace(/\n```$/, "")
-    } else if (html.startsWith("```")) {
-      html = html.replace(/^```\n/, "").replace(/\n```$/, "")
-    }
-
-    return html
+  if (textSegments.length === 0) {
+    throw new Error("Unexpected response format from Claude")
   }
 
-  throw new Error("Unexpected response format from Claude")
+  let html = textSegments.join("").trim()
+
+  if (html.startsWith("```html")) {
+    html = html.replace(/^```html\n/, "").replace(/\n```$/, "")
+  } else if (html.startsWith("```")) {
+    html = html.replace(/^```\n/, "").replace(/\n```$/, "")
+  }
+
+  return html
 }
 
 export async function POST(request: NextRequest) {
   try {
     console.log("[v0] API route called")
     const body = await request.json()
-    const { prompt } = body
+    const { prompt, baseHtml } = body
 
     if (!prompt) {
       return NextResponse.json({ error: "Missing prompt" }, { status: 400 })
@@ -129,7 +151,7 @@ export async function POST(request: NextRequest) {
     console.log("[v0] API key found in environment, length:", apiKey.length)
 
     console.log("[v0] Generating webpage with prompt:", prompt.substring(0, 50) + "...")
-    const html = await generateWebpageOnServer(prompt)
+    const html = await generateWebpageOnServer(prompt, baseHtml)
 
     console.log("[v0] Webpage generated successfully")
     return NextResponse.json({ html })
