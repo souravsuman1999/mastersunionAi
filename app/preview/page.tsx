@@ -1,13 +1,51 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import styles from "./page.module.css"
 
 type PreviewStatus = "loading" | "ready" | "error"
 
 export default function FullPreviewPage() {
+  return (
+    <Suspense fallback={<PreviewFallback />}>
+      <FullPreviewContent />
+    </Suspense>
+  )
+}
+
+function PreviewFallback() {
+  return (
+    <div className={styles.page}>
+      <header className={styles.toolbar}>
+        <div className={styles.mulogo}>
+          <img
+            loading="lazy"
+            src="https://files.mastersunion.link/resources/animateds/logoanimationblack.gif"
+            alt="MU Logo"
+          />
+        </div>
+        <div className={styles.toolbarActions}>
+          <button type="button" className={styles.copyButton} disabled>
+            Preparing...
+          </button>
+          <Link href="/" className={styles.backLink}>
+            Back to builder
+          </Link>
+        </div>
+      </header>
+
+      <div className={styles.frameWrapper}>
+        <div className={styles.messageCard}>
+          <p>Loading preview...</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FullPreviewContent() {
   const searchParams = useSearchParams()
   const previewId = searchParams.get("id")
   const [status, setStatus] = useState<PreviewStatus>("loading")
