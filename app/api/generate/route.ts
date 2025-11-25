@@ -6,6 +6,10 @@ async function generateWebpageOnServer(prompt: string): Promise<string> {
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not set")
   }
+  
+  if (!apiKey.startsWith("sk-ant-")) {
+    console.warn("[v0] Warning: API key format may be incorrect. Anthropic API keys typically start with 'sk-ant-'")
+  }
 
   const designSystemPrompt = getDesignSystemPrompt()
 
@@ -48,6 +52,14 @@ Create beautiful, functional webpages with good typography, spacing, and visual 
   if (!response.ok) {
     const errorText = await response.text()
     console.error("[v0] Anthropic API error:", errorText)
+    
+    if (response.status === 401) {
+      throw new Error(
+        "401 Unauthorized: Invalid or missing ANTHROPIC_API_KEY. " +
+        "Please ensure your API key is set in your deployment environment variables."
+      )
+    }
+    
     throw new Error(`Claude API error: ${response.status} ${response.statusText}`)
   }
 
