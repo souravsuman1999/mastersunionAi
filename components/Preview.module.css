@@ -89,6 +89,8 @@
   border: none;
   display: block;
   background: white;
+  pointer-events: auto;
+  cursor: default;
 }
 
 /* Enhanced placeholder with better visual hierarchy */

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
 import styles from "./Preview.module.css"
 
@@ -15,6 +15,7 @@ interface PreviewProps {
 
 export default function Preview({ html, isLoading }: PreviewProps) {
   const [copied, setCopied] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const handleCopy = async () => {
     try {
@@ -25,6 +26,47 @@ export default function Preview({ html, isLoading }: PreviewProps) {
       console.error("Failed to copy:", error)
     }
   }
+
+  // Ensure cursor is visible in iframe
+  useEffect(() => {
+    if (iframeRef.current && html) {
+      const iframe = iframeRef.current
+      const handleLoad = () => {
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+          if (iframeDoc) {
+            // Inject CSS to ensure cursor is visible
+            const style = iframeDoc.createElement("style")
+            style.textContent = `
+              * {
+                cursor: default !important;
+              }
+              a, button, input, textarea, select, [role="button"], [onclick] {
+                cursor: pointer !important;
+              }
+              input[type="text"], input[type="email"], input[type="password"], textarea {
+                cursor: text !important;
+              }
+            `
+            iframeDoc.head.appendChild(style)
+          }
+        } catch (error) {
+          // Cross-origin restrictions might prevent this, which is fine
+          console.log("Could not inject cursor styles into iframe:", error)
+        }
+      }
+
+      iframe.addEventListener("load", handleLoad)
+      // Also try immediately in case iframe is already loaded
+      if (iframe.contentDocument?.readyState === "complete") {
+        handleLoad()
+      }
+
+      return () => {
+        iframe.removeEventListener("load", handleLoad)
+      }
+    }
+  }, [html])
 
   return (
     <div className={styles.container}>
@@ -67,6 +109,7 @@ export default function Preview({ html, isLoading }: PreviewProps) {
           </div>
         ) : html ? (
           <iframe
+            ref={iframeRef}
             className={styles.iframe}
             srcDoc={html}
             sandbox="allow-scripts allow-same-origin"
