@@ -1,0 +1,171 @@
+.container {
+  width: 100%;
+  max-width: 900px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Lovable-style input box with dark rounded design */
+.inputBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(40, 40, 40, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  transition: all 0.2s ease;
+}
+
+.inputBox:focus-within {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 3px rgba(250, 209, 51, 0.1);
+}
+
+.textarea {
+  flex: 1;
+  min-height: 24px;
+  max-height: 200px;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  font-family: var(--go-regular);
+  font-size: 15px;
+  color: var(--white);
+  resize: none;
+  outline: none;
+  line-height: 1.6;
+}
+
+.textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inputActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-family: var(--go-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.iconButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--white);
+}
+
+.iconButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Circular submit button like Lovable */
+.submitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: var(--yellow);
+  border: none;
+  border-radius: 50%;
+  color: var(--black);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: var(--darkYellow);
+  transform: scale(1.05);
+}
+
+.submitButton:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-top-color: var(--black);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: rgba(155, 9, 9, 0.15);
+  border: 1px solid var(--red1);
+  border-radius: 16px;
+  color: #ff6b6b;
+  font-size: 14px;
+  font-family: var(--go-medium);
+}
+
+.error svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.error strong {
+  font-family: var(--go-bold);
+  color: #ff4d4d;
+}
+
+.errorHint {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  color: #ffa5a5;
+  font-family: var(--go-regular);
+}
+
+@media (max-width: 768px) {
+  .inputBox {
+    padding: 14px 16px;
+  }
+
+  .iconButton {
+    padding: 8px;
+    font-size: 0;
+  }
+
+  .iconButton svg {
+    margin: 0;
+  }
+}

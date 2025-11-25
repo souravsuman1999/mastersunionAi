@@ -1,0 +1,54 @@
+# Dependency directories
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Next.js build output
+.next/
+out/
+dist/
+
+# Next.js cache
+.next/cache/
+.vercel/
+
+# Production
+build/
+
+# Local env files
+# .env*
+!.env.example
+
+# Logs
+logs
+*.log
+*.log.*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Typescript
+*.tsbuildinfo
+
+# Optional: Ignore generated preview HTML
+public/generated/*
