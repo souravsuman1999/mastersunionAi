@@ -2,10 +2,18 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getDesignSystemPrompt } from "@/config/design-system"
 
 async function generateWebpageOnServer(prompt: string): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not set")
   }
+  
+  // Log API key status (without exposing the actual key)
+  console.log("[v0] API key status:", {
+    exists: !!apiKey,
+    length: apiKey.length,
+    startsWithSkAnt: apiKey.startsWith("sk-ant-"),
+    firstChars: apiKey.substring(0, 7),
+  })
   
   if (!apiKey.startsWith("sk-ant-")) {
     console.warn("[v0] Warning: API key format may be incorrect. Anthropic API keys typically start with 'sk-ant-'")
@@ -51,12 +59,25 @@ Create beautiful, functional webpages with good typography, spacing, and visual 
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error("[v0] Anthropic API error:", errorText)
+    let errorData
+    try {
+      errorData = JSON.parse(errorText)
+    } catch {
+      errorData = { error: { message: errorText } }
+    }
+    
+    console.error("[v0] Anthropic API error:", {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData,
+    })
     
     if (response.status === 401) {
+      const errorMessage = errorData?.error?.message || "Invalid API key"
       throw new Error(
-        "401 Unauthorized: Invalid or missing ANTHROPIC_API_KEY. " +
-        "Please ensure your API key is set in your deployment environment variables."
+        `401 Unauthorized: ${errorMessage}. ` +
+        "Please verify your ANTHROPIC_API_KEY is correct and set in Vercel environment variables. " +
+        "Make sure to redeploy after adding the variable."
       )
     }
     
@@ -93,14 +114,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing prompt" }, { status: 400 })
     }
 
-    if (!process.env.ANTHROPIC_API_KEY) {
+    const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
+    if (!apiKey) {
+      console.error("[v0] ANTHROPIC_API_KEY is missing from environment variables")
       return NextResponse.json(
         {
-          error: "ANTHROPIC_API_KEY not configured. Please add it in the Vars section of the sidebar.",
+          error: "ANTHROPIC_API_KEY not configured. Please add it in Vercel's Environment Variables settings and redeploy.",
         },
         { status: 500 },
       )
     }
+    
+    // Log that API key exists (for debugging, without exposing the key)
+    console.log("[v0] API key found in environment, length:", apiKey.length)
 
     console.log("[v0] Generating webpage with prompt:", prompt.substring(0, 50) + "...")
     const html = await generateWebpageOnServer(prompt)
