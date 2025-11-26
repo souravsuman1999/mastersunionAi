@@ -29,6 +29,7 @@ ${designSystemPrompt}
 IMPORTANT OUTPUT RULES:
 - Return ONLY the complete HTML code (including <!DOCTYPE html>, <html>, <head>, and <body> tags)
 - Include inline CSS in a <style> tag in the <head>
+- Include all interactive behavior inside a <script> tag that appears before </body>. Use clean, modern, vanilla JavaScript (no frameworks besides Swiper) and respect the provided class names/data attributes.
 - The CSS MUST follow the design system rules above
 - Make the page responsive and professional
 - DO NOT include any explanations, markdown code blocks, or extra text
@@ -51,6 +52,7 @@ Create beautiful, functional webpages with good typography, spacing, and visual 
 CRITICAL RULES:
 - Keep ALL existing HTML elements, classes, IDs, and structure
 - Preserve ALL existing CSS styles and design tokens
+- Preserve and extend any existing <script> logic unless the user explicitly asks to change or remove it
 - Only modify or add what the user specifically requests
 - If the user asks to "add" something, add it to the existing page without removing anything
 - If the user asks to "change" something, only change that specific part
