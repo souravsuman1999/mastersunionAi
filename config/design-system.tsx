@@ -21,6 +21,7 @@ IMPORTANT RULES:
 - Use querySelector/querySelectorAll with clear class or data attributes for JS hooks—do NOT rely on IDs that are not present
 - NEVER include comments, markdown or explanations
 - ALWAYS implement interactive behavior mentioned or implied in the prompt (e.g. toggles, accordions, counters, sliders, form validation, CTA hover effects, tabs). If nothing is explicitly interactive, add at least one subtle enhancement such as smooth scrolling or animated statistics.
+- Every form you generate must ship with client-side validation (required fields, inline error handling, and helpful messaging) without relying on external libraries.
 - For hero sections, prefer the classes:
   - .go-HeroTitle, .fr-TitleItalic, .go-HeroSubtitle, .textHighlight
 - For primary buttons, prefer:
@@ -52,6 +53,7 @@ IMPORTANT RULES:
   --darkOrange: #E38330;
   --darkGreen: #648937;
   --newYellow: #febe00;
+  --gradient: linear-gradient(90deg, #39B6D8 6.41%, #F7D344 51.47%, #E38330 96.52%);
 }
 
 
@@ -361,6 +363,247 @@ input, textarea {
 input:focus, textarea:focus {
   outline: 2px solid var(--yellow);
 }
+
+/* ============================================
+   FORM SYSTEM
+   ============================================ */
+.mu-formSection {
+  padding: 64px 0;
+  display: flex;
+  justify-content: center;
+  background: var(--black2);
+}
+
+.mu-formCard {
+  width: 100%;
+  max-width: 580px;
+  background: #fefefe;
+  border-radius: 10px;
+  padding: 20px 25px;
+  box-shadow: 0 30px 90px rgba(9, 9, 9, 0.25);
+  border: 1px solid rgba(9, 9, 9, 0.08);
+  color: var(--black);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.mu-formCard h3 {
+  margin: 0;
+  font: normal 24px/1.2 var(--go-semibold);
+  color: var(--black);
+}
+
+.mu-formSubtitle {
+  margin: 0;
+  font: normal 14px/1.6 var(--go-regular);
+  color: #585858;
+}
+
+.mu-formGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mu-formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mu-formLabel {
+  font: normal 12px/1.4 var(--go-medium);
+  color: var(--black);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mu-requiredDot {
+  color: #DF2935;
+  font-size: 16px;
+}
+
+.mu-formInput {
+  border: 1px solid #E4E4E7;
+  border-radius: 4px;
+  padding: 12px;
+  background: #fbfbfb;
+  color: var(--black);
+  font: normal 13px/1.5 var(--go-regular);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.mu-formInput::placeholder {
+  color: #b7b7b7;
+  font-size: 15px;
+}
+
+.mu-formInput:focus {
+border: 1px solid transparent;
+    background: linear-gradient(var(--white) 0 0) padding-box, var(--gradient) border-box;
+  box-shadow: 0 0 0 3px rgba(57, 181, 215, 0.2);
+  outline: none;
+}
+  input:focus {
+    border: 1px solid;
+    border-image-slice: 1;
+    border-image-source: linear-gradient(91.25deg, #39B5D7 1.8%, #F7D544 50.99%, #E38330 99.75%);
+    border-radius: 4px;
+    color: black;
+}
+
+.mu-formInput.error {
+  border-color: #DF2935;
+  box-shadow: 0 0 0 2px rgba(223, 41, 53, 0.18);
+}
+
+.mu-errorMessage {
+  font: normal 12px/1.4 var(--go-medium);
+  color: #DF2935;
+  margin: 0;
+  display: none;
+}
+
+.mu-errorMessage.visible {
+  display: block;
+}
+
+.mu-formActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btnGradientPill {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 14px 46px;
+  font: normal 16px/1.4 var(--go-semibold);
+  cursor: pointer;
+  color: var(--black);
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(120deg, #39B5D7 0%, #F7D544 52%, #E38330 100%) border-box;
+  box-shadow: 0 16px 30px rgba(227, 131, 48, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btnGradientPill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 40px rgba(57, 181, 215, 0.25);
+}
+
+.btnGradientPill:active {
+  transform: translateY(0);
+}
+
+.btnGradientPill:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 767px) {
+  .mu-formCard {
+    padding: 32px 24px;
+    border-radius: 24px;
+  }
+
+  .mu-formActions {
+    justify-content: center;
+  }
+
+  .btnGradientPill {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================
+   FORM VALIDATION DEFAULTS
+   ============================================ */
+.mu-validated-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mu-validated-form [data-required]::after {
+  content: '*';
+  margin-left: 4px;
+  color: #DF2935;
+}
+
+/*
+Structure every form like this:
+
+<section class="mu-formSection">
+  <form class="mu-formCard mu-validated-form" novalidate>
+    <div class="mu-formGroup">
+      <label for="fullName" class="mu-formLabel">Full Name<span class="mu-requiredDot">*</span></label>
+      <input id="fullName" name="fullName" class="mu-formInput" type="text" placeholder="Enter your name" required data-error="Please enter your full name." />
+      <p class="mu-errorMessage" data-error-for="fullName">Please enter your full name.</p>
+    </div>
+    <div class="mu-formGroup">
+      <label for="email" class="mu-formLabel">Email Address<span class="mu-requiredDot">*</span></label>
+      <input id="email" name="email" class="mu-formInput" type="email" placeholder="Enter your email" required data-error="Provide a valid email address." />
+      <p class="mu-errorMessage" data-error-for="email">Provide a valid email address.</p>
+    </div>
+    <div class="mu-formGroup">
+      <label for="mobile" class="mu-formLabel">Mobile Number<span class="mu-requiredDot">*</span></label>
+      <input id="mobile" name="mobile" class="mu-formInput" type="tel" placeholder="Enter your mobile number" required data-error="Enter a 10 digit phone number." />
+      <p class="mu-errorMessage" data-error-for="mobile">Enter a 10 digit phone number.</p>
+    </div>
+    <div class="mu-formActions">
+      <button type="submit" class="btnGradientPill">Submit</button>
+    </div>
+  </form>
+</section>
+
+Always include this vanilla JS validation block after the form:
+
+<script>
+  document.querySelectorAll('.mu-validated-form').forEach(form => {
+    const fields = form.querySelectorAll('.mu-formInput[required]');
+
+    const validateField = (field) => {
+      const value = field.value.trim();
+      if (!value) return field.dataset.error || 'This field is required.';
+      if (field.type === 'email' && !/^\\S+@\\S+\\.\\S+$/.test(value)) return 'Enter a valid email address.';
+      if (field.type === 'tel' || field.name.toLowerCase().includes('mobile')) {
+        if (!/^\\d{10}$/.test(value.replace(/\\D/g, ''))) return 'Enter a valid 10 digit mobile number.';
+      }
+      return '';
+    };
+
+    const showError = (field, message) => {
+      const errorEl = form.querySelector('[data-error-for="' + field.name + '"]');
+      field.classList.toggle('error', Boolean(message));
+      if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.classList.toggle('visible', Boolean(message));
+      }
+    };
+
+    form.addEventListener('submit', (event) => {
+      let invalid = false;
+      fields.forEach((field) => {
+        const errorMessage = validateField(field);
+        showError(field, errorMessage);
+        if (errorMessage) invalid = true;
+      });
+      if (invalid) event.preventDefault();
+    });
+
+    fields.forEach((field) => {
+      field.addEventListener('input', () => showError(field, validateField(field)));
+      field.addEventListener('blur', () => showError(field, validateField(field)));
+    });
+  });
+</script>
+*/
 
 
 /* ============================================
