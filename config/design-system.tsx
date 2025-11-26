@@ -374,7 +374,7 @@ input:focus, textarea:focus {
   padding: 64px 0;
   display: flex;
   justify-content: center;
-  background: var(--black2);
+  background: var(--black);
 }
 
 .mu-formCard {
