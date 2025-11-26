@@ -22,6 +22,9 @@ IMPORTANT RULES:
 - NEVER include comments, markdown or explanations
 - ALWAYS implement interactive behavior mentioned or implied in the prompt (e.g. toggles, accordions, counters, sliders, form validation, CTA hover effects, tabs). If nothing is explicitly interactive, add at least one subtle enhancement such as smooth scrolling or animated statistics.
 - Every form you generate must ship with client-side validation (required fields, inline error handling, and helpful messaging) without relying on external libraries.
+- Every form must end with a primary Submit button labeled "Submit" that uses the '.btnWhite' style along with the arrow pattern ('.arrowWrap' containing '.arrow1' and '.arrow2') from this design system.
+- Do not rename or restyle that Submit button—reuse the white button token and arrow markup exactly so it visually matches the rest of the system.
+- Always include the provided validation structure and script from the Form System section so forms behave consistently without additional prompts.
 - For hero sections, prefer the classes:
   - .go-HeroTitle, .fr-TitleItalic, .go-HeroSubtitle, .textHighlight
 - For primary buttons, prefer:
@@ -537,7 +540,7 @@ border: 1px solid transparent;
 }
 
 /*
-Structure every form like this:
+Structure every form like this (note the mandatory '.btnWhite' Submit button with the arrow pattern):
 
 <section class="mu-formSection">
   <form class="mu-formCard mu-validated-form" novalidate>
@@ -557,7 +560,17 @@ Structure every form like this:
       <p class="mu-errorMessage" data-error-for="mobile">Enter a 10 digit phone number.</p>
     </div>
     <div class="mu-formActions">
-      <button type="submit" class="btnGradientPill">Submit</button>
+      <button type="submit" class="btnWhite">
+        Submit
+        <span class="arrowWrap">
+          <svg class="arrow arrow1" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <svg class="arrow arrow2" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+      </button>
     </div>
   </form>
 </section>
