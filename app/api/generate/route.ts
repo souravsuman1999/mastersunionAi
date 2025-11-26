@@ -33,7 +33,9 @@ IMPORTANT OUTPUT RULES:
 - Make the page responsive and professional
 - DO NOT include any explanations, markdown code blocks, or extra text
 - The output should be ready to render directly in an iframe
-- If existing HTML is provided, treat it as the starting point and apply the requested changes without discarding useful sections that are still relevant
+- If existing HTML is provided, this is a CONTINUOUS conversation - preserve ALL existing structure, styles, and content unless explicitly asked to change them
+- When updating existing HTML, treat it as an iterative improvement, not a replacement
+- Maintain design consistency across versions
 
 Create beautiful, functional webpages with good typography, spacing, and visual hierarchy while strictly following the design system.`
 
@@ -44,12 +46,22 @@ Create beautiful, functional webpages with good typography, spacing, and visual 
   }
 
   const editAwarePrompt = hasBaseHtml
-    ? `You are updating an existing webpage. Apply the user's new request to the current HTML while keeping its overall structure, design tokens, and any content that is still applicable.
+    ? `You are updating an existing webpage. This is a CONTINUOUS conversation - you must preserve ALL existing HTML structure, CSS styles, and content unless the user explicitly asks to change or remove them.
+
+CRITICAL RULES:
+- Keep ALL existing HTML elements, classes, IDs, and structure
+- Preserve ALL existing CSS styles and design tokens
+- Only modify or add what the user specifically requests
+- If the user asks to "add" something, add it to the existing page without removing anything
+- If the user asks to "change" something, only change that specific part
+- Maintain the same overall design, layout, and styling unless explicitly asked to change it
+- DO NOT regenerate the entire page from scratch
+- DO NOT remove existing sections, styles, or content unless explicitly requested
 
 REQUEST (what to change or add):
 ${prompt}
 
-CURRENT_HTML (update this):
+CURRENT_HTML (preserve this and apply changes):
 ${baseHtml}
 
 Return the complete updated HTML document (including <!DOCTYPE>, <html>, <head>, <body>) with inline CSS that follows the design system.`

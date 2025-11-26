@@ -340,3 +340,34 @@ textarea {
   }
 }
 
+/* Global Scrollbar Styles - Small and Less Width */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Custom scrollbar for webkit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(250, 209, 51, 0.4);
+}
+

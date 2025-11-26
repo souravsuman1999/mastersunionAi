@@ -50,6 +50,11 @@ const getIframeDocument = (iframe: HTMLIFrameElement | null) => {
 }
 
 const injectBaseStyles = (doc: Document) => {
+  if (!doc.head) {
+    console.warn("[Preview] Document head is not available yet")
+    return
+  }
+
   if (doc.getElementById(EDIT_STYLE_ID)) {
     return
   }
@@ -269,21 +274,37 @@ const readIframeHtml = useCallback(() => {
     }
 
     const handleLoad = () => {
-      setIframeReady(true)
       try {
         const iframeDoc = getIframeDocument(iframe)
-        if (iframeDoc) {
+        if (iframeDoc && iframeDoc.head && iframeDoc.body) {
           injectBaseStyles(iframeDoc)
+          setIframeReady(true)
+        } else {
+          // Document not fully ready, retry after a short delay
+          setTimeout(() => {
+            const retryDoc = getIframeDocument(iframe)
+            if (retryDoc && retryDoc.head && retryDoc.body) {
+              injectBaseStyles(retryDoc)
+              setIframeReady(true)
+            }
+          }, 50)
         }
-    } catch (error) {
+      } catch (error) {
         console.error("Could not inject preview styles:", error)
+        // Still set ready even if injection fails
+        setIframeReady(true)
       }
     }
 
     iframe.addEventListener("load", handleLoad)
-    if (iframe.contentDocument?.readyState === "complete") {
-      handleLoad()
+    // Check if document is already loaded and has head/body
+    const checkReady = () => {
+      const doc = getIframeDocument(iframe)
+      if (doc && doc.readyState === "complete" && doc.head && doc.body) {
+        handleLoad()
+      }
     }
+    checkReady()
 
     return () => {
       iframe.removeEventListener("load", handleLoad)

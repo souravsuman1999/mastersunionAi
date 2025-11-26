@@ -117,7 +117,7 @@
   max-width: 520px;
   min-width: 320px;
   display: flex;
-  padding: 32px 28px;
+  padding: 18px 28px 10px;
   background: rgba(10, 10, 10, 0.95);
   border-right: 1px solid var(--grey3);
   box-shadow: 8px 0 24px rgba(0, 0, 0, 0.4);
@@ -127,9 +127,10 @@
 .promptSectionInner {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 8px;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 .promptHeader {
@@ -160,11 +161,10 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-top: 8px;
+  margin-bottom: 8px;
 }
 
 .historyTitle {
-  margin: 8px 0 0 0;
   font-size: 18px;
   font-family: var(--go-bold);
   color: var(--white);
@@ -183,6 +183,33 @@
   gap: 12px;
   overflow-y: auto;
   padding-right: 6px;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* Custom scrollbar for webkit browsers */
+.historyList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.historyList::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.historyList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.historyList::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.historyList::-webkit-scrollbar-thumb:active {
+  background: rgba(250, 209, 51, 0.4);
 }
 
 .historyEmpty {
@@ -212,7 +239,6 @@
 
 .versionItem:hover {
   border-color: rgba(250, 209, 51, 0.4);
-  transform: translateY(-2px);
 }
 
 .versionItemActive {
@@ -246,6 +272,7 @@
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

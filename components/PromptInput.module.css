@@ -14,25 +14,60 @@
 .inputWrapper {
   width: 100%;
   position: relative;
-  margin-bottom: 24px;
+}
+
+.inputWrapperHero {
+  position: relative;
+}
+
+.buttonContainer {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+.buttonContainerHero {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.arrowContainer {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
 }
 
 .textarea {
   width: 100%;
   min-height: 180px;
-  padding: 20px 24px;
+  max-height: 120px;
+  padding: 20px 140px 20px 24px;
   background: var(--black5);
   border: 1px solid var(--grey9);
   border-radius: 12px;
   color: #ffffff !important;
   font-family: var(--go-regular);
-  font-size: 16px;
-  line-height: 160%;
-  resize: vertical;
+  font-size: 14px;
+  line-height: 150%;
+  resize: none;
   transition: all 0.3s ease;
   outline: none;
   -webkit-text-fill-color: #ffffff !important;
   caret-color: #ffffff;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.textareaHero {
+  padding: 20px 24px;
+}
+
+.textareaSidebar {
+  padding: 20px 60px 20px 24px;
 }
 
 .textarea::-webkit-input-placeholder {
@@ -75,18 +110,36 @@
   cursor: not-allowed;
 }
 
-.formActions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+/* Textarea Scrollbar Styling */
+.textarea::-webkit-scrollbar {
+  width: 4px;
 }
+
+.textarea::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.textarea::-webkit-scrollbar-thumb:active {
+  background: rgba(250, 209, 51, 0.4);
+}
+
 
 .buttonWrapper {
   cursor: pointer;
   padding: 1px;
   position: relative;
-  max-width: max-content;
+  width: max-content;
   display: inline-block;
   z-index: 1;
   border-radius: 35px;
@@ -129,17 +182,18 @@
   z-index: 1;
   transition: 0.4s ease-in;
   width: 100%;
-  padding: 16px 32px;
+  padding: 12px 24px;
   border-radius: 35px;
   color: var(--white);
   font-family: var(--go-semibold);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  line-height: 24px;
+  line-height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .generateButton::after {
@@ -244,15 +298,78 @@
   font-family: var(--go-regular);
 }
 
+.arrowButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--white);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  padding: 0;
+  color: var(--black);
+}
+
+.arrowButton:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.arrowButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--grey9);
+  color: var(--grey10);
+}
+
+.arrowButton svg {
+  width: 20px;
+  height: 20px;
+}
+
 @media (max-width: 767px) {
   .textarea {
     min-height: 150px;
-    padding: 16px 20px;
+    padding: 16px 110px 16px 20px;
     font-size: 15px;
   }
 
+  .textareaHero {
+    padding: 16px 20px;
+  }
+
+  .textareaSidebar {
+    padding: 16px 60px 16px 20px;
+  }
+
+  .buttonContainer {
+    bottom: 12px;
+    right: 12px;
+  }
+
+  .buttonContainerHero {
+    margin-top: 12px;
+  }
+
+  .arrowContainer {
+    bottom: 12px;
+    right: 12px;
+  }
+
   .generateButton {
-    padding: 14px 28px;
-    font-size: 15px;
+    padding: 10px 18px;
+    font-size: 13px;
+  }
+
+  .generateButton span {
+    display: none;
+  }
+
+  .arrowButton {
+    width: 40px;
+    height: 40px;
   }
 }
