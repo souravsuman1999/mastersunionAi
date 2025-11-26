@@ -123,25 +123,43 @@ export default function Home() {
 
   if (!hasGenerated) {
     return (
-      <div className={styles.welcomeContainer}>
-        <div className={styles.welcomeContent}>
-          <h1 className={styles.welcomeTitle}>
-            Build something with <span className={styles.brandHighlight}> <br />Masters' Union</span>
-          </h1>
-          <p className={styles.welcomeSubtitle}>Create webpages by chatting with AI</p>
+      <main className={styles.aiGenrate}>
+        <section className={styles.aiGenrateHero}>
+          <div className={styles.container}>
+            <div className={styles.aiGenrateHeroContent}>
+              <div>
+              <h1 className={styles.gradientText}>MU AI Page Generator</h1>
+              <p className={styles.aiGenrateSubtitle}>Transform your ideas into stunning pages with the power of AI</p>
+              </div>
+              <div className={styles.welcomePromptArea}>
+                <PromptInput
+                  onGenerate={handleGenerate}
+                  isLoading={isLoading}
+                  error={error}
+                  value={currentPrompt}
+                  onPromptChange={setCurrentPrompt}
+                  isReadOnly={isPreviewEditMode}
+                />
+              </div>
 
-          <div className={styles.welcomePromptArea}>
-            <PromptInput
-              onGenerate={handleGenerate}
-              isLoading={isLoading}
-              error={error}
-              value={currentPrompt}
-              onPromptChange={setCurrentPrompt}
-              isReadOnly={isPreviewEditMode}
-            />
+              <div className={styles.aiGenrateFeatures}>
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>✨</div>
+                  <p className={styles.featureText}>AI-Powered Generation</p>
+                </div>
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>⚡</div>
+                  <p className={styles.featureText}>Fast & Efficient</p>
+                </div>
+                <div className={styles.featureItem}>
+                  <div className={styles.featureIcon}>🎨</div>
+                  <p className={styles.featureText}>Beautiful Designs</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     )
   }
 

@@ -41,45 +41,45 @@ export default function PromptInput({
   return (
     <div className={styles.container}>
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.inputBox}>
+        <div className={styles.inputWrapper}>
           <textarea
             ref={textareaRef}
             className={styles.textarea}
             value={value}
             onChange={(e) => onPromptChange(e.target.value)}
-            placeholder="Ask Masters' Union AI to create a webpage..."
-            rows={1}
+            placeholder="Describe the page you want to generate... (e.g., 'Create a landing page for a tech startup with hero section, features, and contact form')"
+            rows={6}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+              if (e.key === "Enter" && e.ctrlKey) {
                 e.preventDefault()
                 handleSubmit(e)
               }
             }}
             disabled={isLoading || isReadOnly}
           />
-          <div className={styles.inputActions}>
-            {/* <button type="button" className={styles.iconButton} title="Add attachment" disabled={isLoading}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-              </svg>
-              Attach
-            </button> */}
+        </div>
 
+        <div className={styles.formActions}>
+          <div className={`${styles.buttonWrapper} ${(isLoading || !value.trim() || !!isReadOnly) ? styles.buttonWrapperDisabled : ''}`}>
             <button
               type="submit"
-              className={styles.submitButton}
+              className={styles.generateButton}
               disabled={isLoading || !value.trim() || !!isReadOnly}
             >
               {isLoading ? (
                 <div className={styles.spinner} />
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                </svg>
+                <>
+                  <span>Generate Page</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4.16667 10H15.8333M15.8333 10L10.8333 5M15.8333 10L10.8333 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </>
               )}
             </button>
           </div>
         </div>
+
         {error && (
           <div className={styles.error}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
