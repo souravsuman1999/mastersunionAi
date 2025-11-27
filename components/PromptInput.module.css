@@ -70,6 +70,10 @@
   padding: 20px 60px 20px 24px;
 }
 
+.textareaSidebar.textareaWithImage {
+  padding-right: 140px !important;
+}
+
 .textarea::-webkit-input-placeholder {
   color: var(--grey10) !important;
   opacity: 0.7;
@@ -330,6 +334,120 @@
   height: 20px;
 }
 
+.imagePreviewContainer {
+  position: absolute;
+  top: 12px;
+  right: 60px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.inputWrapperHero .imagePreviewContainer {
+  right: 24px;
+}
+
+.imagePreview {
+  position: relative;
+  display: inline-block;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--grey9);
+  background: var(--black5);
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.imagePreview img {
+  display: block;
+  max-width: 120px;
+  max-height: 80px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.removeImageButton {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  color: var(--white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.removeImageButton:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+.removeImageButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.textareaWithImage {
+  padding-right: 140px !important;
+}
+
+.fileInput {
+  display: none;
+}
+
+.imageUploadButton {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--white);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: var(--black);
+  z-index: 10;
+}
+
+.imageUploadButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
+.imageUploadButton:active {
+  transform: scale(0.95);
+}
+
+.imageUploadButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 767px) {
+  .imageUploadButton {
+    width: 40px;
+    height: 40px;
+    bottom: 12px;
+    left: 12px;
+  }
+
+  .imagePreview img {
+    max-width: 100%;
+    max-height: 150px;
+  }
+}
+
 @media (max-width: 767px) {
   .textarea {
     min-height: 150px;
@@ -371,5 +489,30 @@
   .arrowButton {
     width: 40px;
     height: 40px;
+  }
+
+  .textareaWithImage {
+    padding-right: 120px !important;
+  }
+
+  .imageUploadButton {
+    width: 40px;
+    height: 40px;
+    bottom: 12px;
+    left: 12px;
+  }
+
+  .imagePreviewContainer {
+    top: 8px;
+    right: 50px;
+  }
+
+  .inputWrapperHero .imagePreviewContainer {
+    right: 12px;
+  }
+
+  .imagePreview img {
+    max-width: 80px;
+    max-height: 60px;
   }
 }

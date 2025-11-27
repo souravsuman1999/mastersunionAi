@@ -42,19 +42,22 @@ export default function Home() {
 
   const selectedVersion = selectedVersionId ? versions.find((version) => version.id === selectedVersionId) : undefined
 
-  const handleGenerate = async (prompt: string) => {
+  const handleGenerate = async (prompt: string, imageData?: string) => {
     setHasGenerated(true)
     setIsLoading(true)
     setError("")
     setCurrentPrompt(prompt)
 
-    const payload: { prompt: string; baseHtml?: string } = { prompt }
+    const payload: { prompt: string; baseHtml?: string; imageData?: string } = { prompt }
     // Always use the latest version (first in array) as base, or selected version if available
     // This ensures version 2 builds on version 1, version 3 builds on version 2, etc.
     const latestVersion = versions.length > 0 ? versions[0] : null
     const baseHtmlCandidate = selectedVersion?.html ?? latestVersion?.html ?? generatedHtml
     if (baseHtmlCandidate?.trim()) {
       payload.baseHtml = baseHtmlCandidate
+    }
+    if (imageData) {
+      payload.imageData = imageData
     }
 
     try {

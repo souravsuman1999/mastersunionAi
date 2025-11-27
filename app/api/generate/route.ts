@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDesignSystemPrompt } from "@/config/design-system"
 
-async function generateWebpageOnServer(prompt: string, baseHtml?: string): Promise<string> {
+async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageData?: string): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not set")
@@ -37,6 +37,7 @@ IMPORTANT OUTPUT RULES:
 - If existing HTML is provided, this is a CONTINUOUS conversation - preserve ALL existing structure, styles, and content unless explicitly asked to change them
 - When updating existing HTML, treat it as an iterative improvement, not a replacement
 - Maintain design consistency across versions
+- If an image is provided, use it as a reference for design, layout, colors, styling, or content. Analyze the image carefully and incorporate relevant visual elements, color schemes, layout patterns, or design inspiration into the generated webpage.
 
 Create beautiful, functional webpages with good typography, spacing, and visual hierarchy while strictly following the design system.`
 
@@ -69,6 +70,34 @@ ${baseHtml}
 Return the complete updated HTML document (including <!DOCTYPE>, <html>, <head>, <body>) with inline CSS that follows the design system.`
     : prompt
 
+  // Build content array for Claude API
+  const content: any[] = []
+  
+  // Add image if provided
+  if (imageData) {
+    // Parse base64 data URL (format: data:image/jpeg;base64,/9j/4AAQ...)
+    const base64Match = imageData.match(/^data:image\/(\w+);base64,(.+)$/)
+    if (base64Match) {
+      const mediaType = base64Match[1] // jpeg, png, etc.
+      const base64String = base64Match[2] // actual base64 data
+      
+      content.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: `image/${mediaType}`,
+          data: base64String,
+        },
+      })
+    }
+  }
+  
+  // Add text prompt
+  content.push({
+    type: "text",
+    text: editAwarePrompt,
+  })
+
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -82,7 +111,7 @@ Return the complete updated HTML document (including <!DOCTYPE>, <html>, <head>,
       messages: [
         {
           role: "user",
-          content: editAwarePrompt,
+          content: content,
         },
       ],
       system: systemPrompt,
@@ -144,10 +173,10 @@ export async function POST(request: NextRequest) {
   try {
     console.log("[v0] API route called")
     const body = await request.json()
-    const { prompt, baseHtml } = body
+    const { prompt, baseHtml, imageData } = body
 
-    if (!prompt) {
-      return NextResponse.json({ error: "Missing prompt" }, { status: 400 })
+    if (!prompt && !imageData) {
+      return NextResponse.json({ error: "Missing prompt or image" }, { status: 400 })
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
@@ -164,8 +193,11 @@ export async function POST(request: NextRequest) {
     // Log that API key exists (for debugging, without exposing the key)
     console.log("[v0] API key found in environment, length:", apiKey.length)
 
-    console.log("[v0] Generating webpage with prompt:", prompt.substring(0, 50) + "...")
-    const html = await generateWebpageOnServer(prompt, baseHtml)
+    console.log("[v0] Generating webpage with prompt:", prompt?.substring(0, 50) + "..." || "[Image only]")
+    if (imageData) {
+      console.log("[v0] Image data provided, length:", imageData.length)
+    }
+    const html = await generateWebpageOnServer(prompt || "", baseHtml, imageData)
 
     console.log("[v0] Webpage generated successfully")
     return NextResponse.json({ html })
