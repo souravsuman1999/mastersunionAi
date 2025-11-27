@@ -49,10 +49,12 @@ export default function Home() {
     setCurrentPrompt(prompt)
 
     const payload: { prompt: string; baseHtml?: string; imageData?: string } = { prompt }
-    // Always use the latest version (first in array) as base, or selected version if available
+    // Always use the latest version (first in array) as base for conversation flow
     // This ensures version 2 builds on version 1, version 3 builds on version 2, etc.
+    // The selected version only affects display, not the base for new generations
+    // This creates a continuous conversation where each new prompt edits the previous version
     const latestVersion = versions.length > 0 ? versions[0] : null
-    const baseHtmlCandidate = selectedVersion?.html ?? latestVersion?.html ?? generatedHtml
+    const baseHtmlCandidate = latestVersion?.html ?? generatedHtml
     if (baseHtmlCandidate?.trim()) {
       payload.baseHtml = baseHtmlCandidate
     }
