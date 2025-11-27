@@ -172,17 +172,17 @@ IMPORTANT RULES:
 body {
   margin: 0;
   padding: 0;
-  background: var(--black2);
+  background: var(--black);
   color: var(--white);
-  font-family: var(--go-regular);
+  font-family: "go-regular";
 }
 
 h4, h5, h6 {
-  font-family: var(--go-semibold);
+  font-family: "go-semibold";
 }
 
 p, li, span {
-  font-family: var(--go-regular);
+  font-family: "go-regular";
 }
 section{
   padding: 80px 0;
@@ -192,7 +192,7 @@ section{
    TYPOGRAPHY UTILITY CLASSES (HEADINGS / HERO)
    ============================================ */
 .go-HeroTitle {
-  font: normal 52px/1.2 var(--go-regular);
+  font: normal 52px/1.2 "go-regular";
 }
 
 .fr-TitleItalic {
@@ -205,7 +205,7 @@ section{
 }
 
 .go-HeroSubtitle {
-  font: normal 16px/1.5 var(--go-regular);
+  font: normal 16px/1.5 "go-regular";
 }
 
 .textHighlight {
@@ -218,11 +218,11 @@ section{
 }
 
 .go-BreatherHeadingTemp {
-  font: normal 42px/1.2 var(--go-regular);
+  font: normal 42px/1.2 "go-regular";
 }
 
 .go-HighlightHeading {
-  font: normal 30px/1.2 var(--go-regular);
+  font: normal 30px/1.2 "go-regular";
 }
 
 .fr-HeadingItalic {
@@ -241,7 +241,7 @@ section{
 }
 
 .go-BlockHeading {
-  font: normal 24px/1.2 var(--go-regular);
+  font: normal 24px/1.2 "go-regular";
 }
 
 .fr-BlockHeading {
@@ -253,7 +253,7 @@ section{
 }
 
 .go-BreatherHeading {
-  font: normal 28px/1.2 var(--go-regular);
+  font: normal 28px/1.2 "go-regular";
 }
 
 .fr-BreatherHeading {
@@ -276,7 +276,7 @@ section{
   padding: 60px 0;
 }
   .go-BreatherHeading {
-    font: normal 22px/1.2 var(--go-regular);
+    font: normal 22px/1.2 "go-regular";
   }
 
   .fr-BreatherHeading {
@@ -285,11 +285,11 @@ section{
   }
 
   .go-HeroSubtitle {
-    font: normal 14px/1.5 var(--go-regular);
+    font: normal 14px/1.5 "go-regular";
   }
 
   .go-HeroTitle {
-    font: normal 30px/1.2 var(--go-regular);
+    font: normal 30px/1.2 "go-regular";
   }
 
   .fr-TitleItalic {
@@ -303,7 +303,7 @@ section{
   }
 
   .go-BreatherHeadingTemp {
-    font: normal 30px/1.2 var(--go-regular);
+    font: normal 30px/1.2 "go-regular";
   }
 
   .fr-BreatherHeadingTemp {
@@ -311,7 +311,7 @@ section{
   }
 
   .go-HighlightHeading {
-    font: normal 22px/1.2 var(--go-regular);
+    font: normal 22px/1.2 "go-regular";
   }
 
   .fr-HeadingItalic {
@@ -323,7 +323,7 @@ section{
   }
 
   .go-BlockHeading {
-    font: normal 18px/1.5 var(--go-regular);
+    font: normal 18px/1.5 "go-regular";
   }
 }
 
@@ -337,7 +337,7 @@ button {
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   border: none;
-  font-family: var(--go-semibold);
+  font-family: "go-semibold";
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -360,7 +360,7 @@ input, textarea {
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   color: var(--white);
-  font-family: var(--go-regular);
+  font-family: "go-regular";
 }
 
 input:focus, textarea:focus {
@@ -393,13 +393,13 @@ input:focus, textarea:focus {
 
 .mu-formCard h3 {
   margin: 0;
-  font: normal 24px/1.2 var(--go-semibold);
+  font: normal 24px/1.2 "go-semibold";
   color: var(--black);
 }
 
 .mu-formSubtitle {
   margin: 0;
-  font: normal 14px/1.6 var(--go-regular);
+  font: normal 14px/1.6 "go-regular";
   color: #585858;
 }
 
@@ -416,7 +416,7 @@ input:focus, textarea:focus {
 }
 
 .mu-formLabel {
-  font: normal 12px/1.4 var(--go-medium);
+  font: normal 12px/1.4 "go-medium";
   color: var(--black);
   display: flex;
   align-items: center;
@@ -434,7 +434,7 @@ input:focus, textarea:focus {
   padding: 12px;
   background: #fbfbfb;
   color: var(--black);
-  font: normal 13px/1.5 var(--go-regular);
+  font: normal 13px/1.5 "go-regular";
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -463,7 +463,7 @@ border: 1px solid transparent;
 }
 
 .mu-errorMessage {
-  font: normal 12px/1.4 var(--go-medium);
+  font: normal 12px/1.4 "go-medium";
   color: #DF2935;
   margin: 0;
   display: none;
@@ -482,7 +482,7 @@ border: 1px solid transparent;
   border-radius: 999px;
   border: 1px solid transparent;
   padding: 14px 46px;
-  font: normal 16px/1.4 var(--go-semibold);
+  font: normal 16px/1.4 "go-semibold";
   cursor: pointer;
   color: var(--black);
   background:
