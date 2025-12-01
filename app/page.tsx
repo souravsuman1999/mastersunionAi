@@ -135,9 +135,12 @@ export default function Home() {
         <section className={styles.aiGenrateHero}>
           <div className={styles.container}>
             <div className={styles.aiGenrateHeroContent}>
-              <div>
-              <h1 className={styles.gradientText}>MU AI Page Generator</h1>
-              <p className={styles.aiGenrateSubtitle}>Transform your ideas into stunning pages with the power of AI</p>
+              <div className={styles.mucontentdiv} >
+                <div className={styles.muLogoAnimation}>
+                  <img loading="lazy" src="https://files.mastersunion.link/resources/animateds/logoanimationblack.gif" alt="MU Logo" />
+                </div>
+                <h1 className={styles.gradientText}> <span> WebStudio </span></h1>
+                <p className={styles.aiGenrateSubtitle}>Transform your ideas into stunning pages with the power of AI</p>
               </div>
               <div className={styles.welcomePromptArea}>
                 <PromptInput
@@ -187,7 +190,7 @@ export default function Home() {
             <div className={styles.historyHeader}>
               <div>
                 <p className={styles.promptEyebrow}>History</p>
-                <h3 className={styles.historyTitle}>Prompt versions</h3>
+                {/* <h3 className={styles.historyTitle}>Prompt versions</h3> */}
               </div>
               {selectedVersion && <span className={styles.historyActiveLabel}>Viewing {activeVersionLabel}</span>}
             </div>
@@ -203,9 +206,8 @@ export default function Home() {
                     type="button"
                     key={version.id}
                     onClick={() => handleVersionSelect(version.id)}
-                    className={`${styles.versionItem} ${
-                      selectedVersionId === version.id ? styles.versionItemActive : ""
-                    }`}
+                    className={`${styles.versionItem} ${selectedVersionId === version.id ? styles.versionItemActive : ""
+                      }`}
                   >
                     <div className={styles.versionHeader}>
                       <span className={styles.versionTitle}>Version {version.versionNumber}</span>

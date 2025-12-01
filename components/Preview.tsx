@@ -446,9 +446,9 @@ const readIframeHtml = useCallback(() => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <div className={styles.titleSection}>
+        {/* <div className={styles.titleSection}>
           {activeVersionLabel && <span className={styles.versionLabel}>{activeVersionLabel}</span>}
-        </div>
+        </div> */}
         <div className={styles.headerActions}>
           <button
             className={styles.secondaryButton}

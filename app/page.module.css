@@ -1,8 +1,8 @@
 /* AI Generate Page Styles */
 .aiGenrate {
- max-height: 100vh;
+  max-height: 100vh;
   background: var(--black);
- overflow: hidden;
+  overflow: hidden;
 }
 
 .aiGenrateHero {
@@ -13,6 +13,22 @@
   justify-content: center;
 }
 
+.muLogoAnimation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+
+  img{
+    max-width: 20%;
+  }
+}
+.mucontentdiv{
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
 .aiGenrateHeroContent {
   max-width: 900px;
   width: 100%;
@@ -21,13 +37,21 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 30px;
+
+
+  .gradientText {
+    width: fit-content;
+    margin: 0 auto;
+    padding-inline: 20px;
+
+  }
 }
 
 .aiGenrateHeroContent h1 {
   font-size: 55px;
   line-height: 110%;
   margin-bottom: 0;
+
 }
 
 .gradientText {
@@ -39,8 +63,12 @@
   font-weight: 800;
 }
 
+.gradientText span {
+  font: italic 54px/1.2 "Fraunces", serif;
+}
+
 .aiGenrateSubtitle {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 160%;
   color: var(--grey10);
   font-family: var(--go-regular);
@@ -117,7 +145,7 @@
   max-width: 520px;
   min-width: 320px;
   display: flex;
-  padding: 18px 28px 10px;
+  padding: 18px 12px 10px;
   background: rgba(10, 10, 10, 0.95);
   border-right: 1px solid var(--grey3);
   box-shadow: 8px 0 24px rgba(0, 0, 0, 0.4);
@@ -151,7 +179,7 @@
 .promptTitle {
   margin: 8px 0 0 0;
   font-size: 20px;
-  font-family: var(--go-bold);
+  font-family: "go-regular";
   color: var(--white);
   line-height: 1.3;
 }
@@ -162,11 +190,13 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 8px;
+  border-bottom: 1px solid var(--grey3);
+  padding-bottom: 12px;
 }
 
 .historyTitle {
-  font-size: 18px;
-  font-family: var(--go-bold);
+  font-size: 14px;
+  font-family: "go-regular";
   color: var(--white);
 }
 
@@ -226,23 +256,23 @@
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(30, 30, 30, 0.8);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 6px;
+  padding: 8px 12px;
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
   color: var(--white);
 }
 
 .versionItem:hover {
-  border-color: rgba(250, 209, 51, 0.4);
+  border-color: rgba(238, 236, 235, 0.4);
 }
 
 .versionItemActive {
-  border-color: var(--yellow);
+  border-color: rgba(255, 255, 255, 0.308);
   background: rgba(250, 209, 51, 0.08);
   box-shadow: 0 0 24px rgba(250, 209, 51, 0.12);
 }
@@ -255,8 +285,9 @@
 }
 
 .versionTitle {
-  font-size: 14px;
-  font-family: var(--go-bold);
+  font-size: 12px;
+  font-family: "go-regular";
+  color: var(--grey);
 }
 
 .versionTimestamp {
@@ -267,7 +298,7 @@
 
 .versionPrompt {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.5;
   display: -webkit-box;

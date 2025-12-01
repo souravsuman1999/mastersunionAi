@@ -291,7 +291,7 @@
 }
 
 .error strong {
-  font-family: var(--go-bold);
+  font-family: "go-regular";
   color: #ff4d4d;
 }
 
