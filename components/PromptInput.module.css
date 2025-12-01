@@ -450,13 +450,14 @@
 
 @media (max-width: 767px) {
   .textarea {
-    min-height: 150px;
+    min-height: 200px;
     padding: 16px 110px 16px 20px;
     font-size: 15px;
   }
 
   .textareaHero {
-    padding: 16px 20px;
+    padding: 16px;
+    font-size: 14px;
   }
 
   .textareaSidebar {
@@ -498,7 +499,7 @@
   .imageUploadButton {
     width: 40px;
     height: 40px;
-    bottom: 12px;
+    bottom: 20px;
     left: 12px;
   }
 

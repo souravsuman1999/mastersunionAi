@@ -309,6 +309,16 @@
 }
 
 @media (max-width: 767px) {
+
+  .muLogoAnimation {
+    img{
+      max-width: 40%;
+    }
+  }
+
+  .aiGenrateHero {
+    padding: 0 0;
+  }
   .aiGenrate {
     padding: 100px 0 60px;
   }
