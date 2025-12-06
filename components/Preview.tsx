@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, ChangeEvent } from "react"
 import dynamic from "next/dynamic"
 import styles from "./Preview.module.css"
 
@@ -35,6 +35,40 @@ const EDITABLE_TAGS = [
   "figcaption",
 ]
 const EDITABLE_SELECTOR = EDITABLE_TAGS.join(", ")
+const LINK_TARGET_ATTRIBUTE = "data-mu-link-target"
+const BUTTON_LINK_ATTRIBUTE = "data-mu-button-link"
+type LinkableTag = "a" | "button"
+
+const sanitizeLinkUrl = (rawValue: string) => {
+  const value = rawValue.trim()
+
+  if (!value || /\s/.test(value)) {
+    return null
+  }
+
+  if (/^(javascript:|data:)/i.test(value)) {
+    return null
+  }
+
+  if (/^(https?:\/\/)/i.test(value) || /^(mailto:|tel:)/i.test(value)) {
+    return value
+  }
+
+  if (value.startsWith("/") || value.startsWith("#")) {
+    return value
+  }
+
+  const stripped = value.replace(/^https?:\/\//i, "")
+  if (/^[\w.-]+(:\d+)?(\/.*)?$/i.test(stripped)) {
+    return `https://${stripped}`
+  }
+
+  return null
+}
+
+const isExternalLink = (url: string) => /^https?:\/\//i.test(url)
+
+const escapeSingleQuotes = (value: string) => value.replace(/'/g, "\\'")
 
 interface PreviewProps {
   html: string
@@ -108,6 +142,10 @@ const injectBaseStyles = (doc: Document) => {
       body[data-mu-edit-mode="true"] [${EDITABLE_ATTRIBUTE}]:focus {
         outline: 1px solid rgba(250, 209, 51, 1);
         box-shadow: 0 0 0 3px rgba(250, 209, 51, 0.25);
+      }
+      body[data-mu-edit-mode="true"] [${LINK_TARGET_ATTRIBUTE}="true"] {
+        outline: 2px solid rgba(86, 149, 255, 0.95) !important;
+        box-shadow: 0 0 0 3px rgba(86, 149, 255, 0.3) !important;
       }
     `
   doc.head.appendChild(style)
@@ -207,6 +245,94 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const skipNextHtmlSync = useRef(false)
   const persistEditedHtmlRef = useRef<() => string | null>(() => null)
+  const [linkEditorTarget, setLinkEditorTarget] = useState<{ element: HTMLElement; tag: LinkableTag } | null>(null)
+  const [linkEditorValue, setLinkEditorValue] = useState("")
+  const [linkEditorMessage, setLinkEditorMessage] = useState("")
+  const [linkEditorTone, setLinkEditorTone] = useState<"info" | "success" | "error">("info")
+  const highlightedLinkRef = useRef<HTMLElement | null>(null)
+  const linkMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearHighlightedLink = useCallback(() => {
+    if (highlightedLinkRef.current) {
+      highlightedLinkRef.current.removeAttribute(LINK_TARGET_ATTRIBUTE)
+      highlightedLinkRef.current = null
+    }
+  }, [])
+
+  const resetLinkMessageTimer = useCallback(() => {
+    if (linkMessageTimeoutRef.current) {
+      clearTimeout(linkMessageTimeoutRef.current)
+      linkMessageTimeoutRef.current = null
+    }
+  }, [])
+
+  const showLinkMessage = useCallback(
+    (message: string, tone: "info" | "success" | "error" = "info") => {
+      resetLinkMessageTimer()
+      setLinkEditorTone(tone)
+      setLinkEditorMessage(message)
+      linkMessageTimeoutRef.current = setTimeout(() => {
+        setLinkEditorMessage("")
+      }, 2200)
+    },
+    [resetLinkMessageTimer]
+  )
+
+  const updateLinkEditorSelection = useCallback(
+    (element: HTMLElement | null) => {
+      resetLinkMessageTimer()
+      setLinkEditorMessage("")
+      setLinkEditorTone("info")
+
+      if (!element) {
+        clearHighlightedLink()
+        setLinkEditorTarget(null)
+        setLinkEditorValue("")
+        return
+      }
+
+      const doc = getIframeDocument(iframeRef.current)
+      if (!doc || !doc.body || !doc.body.contains(element)) {
+        clearHighlightedLink()
+        setLinkEditorTarget(null)
+        setLinkEditorValue("")
+        return
+      }
+
+      const tagName = element.tagName?.toLowerCase()
+      if (tagName !== "a" && tagName !== "button") {
+        clearHighlightedLink()
+        setLinkEditorTarget(null)
+        setLinkEditorValue("")
+        return
+      }
+
+      clearHighlightedLink()
+      element.setAttribute(LINK_TARGET_ATTRIBUTE, "true")
+      highlightedLinkRef.current = element
+
+      const currentValue =
+        tagName === "a" ? element.getAttribute("href") ?? "" : element.getAttribute(BUTTON_LINK_ATTRIBUTE) ?? ""
+
+      setLinkEditorTarget({ element, tag: tagName as LinkableTag })
+      setLinkEditorValue(currentValue)
+    },
+    [clearHighlightedLink, resetLinkMessageTimer]
+  )
+
+  const getResolvedLinkTarget = useCallback(() => {
+    if (!linkEditorTarget) {
+      return null
+    }
+
+    const doc = getIframeDocument(iframeRef.current)
+    if (!doc || !doc.body || !doc.body.contains(linkEditorTarget.element)) {
+      updateLinkEditorSelection(null)
+      return null
+    }
+
+    return linkEditorTarget
+  }, [linkEditorTarget, updateLinkEditorSelection])
 
 const readIframeHtml = useCallback(() => {
     const doc = getIframeDocument(iframeRef.current)
@@ -220,6 +346,7 @@ const readIframeHtml = useCallback(() => {
 
     headClone?.querySelectorAll(`#${EDIT_STYLE_ID}`).forEach((node) => node.remove())
     htmlClone.querySelectorAll(`[${EDITABLE_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(EDITABLE_ATTRIBUTE))
+    htmlClone.querySelectorAll(`[${LINK_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(LINK_TARGET_ATTRIBUTE))
     bodyClone?.removeAttribute("contenteditable")
     bodyClone?.removeAttribute("data-mu-edit-mode")
     bodyClone?.removeAttribute("tabindex")
@@ -254,6 +381,13 @@ const readIframeHtml = useCallback(() => {
   }, [persistEditedHtml])
 
   useEffect(() => {
+    return () => {
+      resetLinkMessageTimer()
+      clearHighlightedLink()
+    }
+  }, [resetLinkMessageTimer, clearHighlightedLink])
+
+  useEffect(() => {
     if (skipNextHtmlSync.current) {
       skipNextHtmlSync.current = false
       return
@@ -266,6 +400,16 @@ const readIframeHtml = useCallback(() => {
   useEffect(() => {
     setIframeReady(false)
   }, [displayHtml])
+
+  useEffect(() => {
+    updateLinkEditorSelection(null)
+  }, [displayHtml, updateLinkEditorSelection])
+
+  useEffect(() => {
+    if (!isEditMode) {
+      updateLinkEditorSelection(null)
+    }
+  }, [isEditMode, updateLinkEditorSelection])
 
   useEffect(() => {
     const iframe = iframeRef.current
@@ -329,6 +473,30 @@ const readIframeHtml = useCallback(() => {
 
     const cleanupMarkers = markEditableElements(doc)
 
+    const resolveLinkableElement = (target: EventTarget | null): HTMLElement | null => {
+      if (!target) {
+        return null
+      }
+
+      const elementCandidate = target as Element | null
+      if (elementCandidate && typeof elementCandidate.closest === "function") {
+        const match = elementCandidate.closest("a, button") as HTMLElement | null
+        if (match && doc.body.contains(match)) {
+          return match
+        }
+      }
+
+      const parent = (target as Node | null)?.parentElement
+      if (parent && typeof parent.closest === "function") {
+        const match = parent.closest("a, button") as HTMLElement | null
+        if (match && doc.body.contains(match)) {
+          return match
+        }
+      }
+
+      return null
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault()
@@ -343,12 +511,33 @@ const readIframeHtml = useCallback(() => {
       }
     }
 
+    const handleClick = (event: MouseEvent) => {
+      const linkElement = resolveLinkableElement(event.target)
+      if (linkElement) {
+        event.preventDefault()
+        updateLinkEditorSelection(linkElement)
+      } else {
+        updateLinkEditorSelection(null)
+      }
+    }
+
+    const handleFocusIn = (event: FocusEvent) => {
+      const linkElement = resolveLinkableElement(event.target)
+      if (linkElement) {
+        updateLinkEditorSelection(linkElement)
+      }
+    }
+
     doc.addEventListener("keydown", handleKeyDown)
+    doc.addEventListener("click", handleClick, true)
+    doc.addEventListener("focusin", handleFocusIn)
 
     return () => {
       cleanupMarkers()
 
       doc.removeEventListener("keydown", handleKeyDown)
+      doc.removeEventListener("click", handleClick, true)
+      doc.removeEventListener("focusin", handleFocusIn)
 
       doc.body.removeAttribute("contenteditable")
       doc.body.removeAttribute("data-mu-edit-mode")
@@ -359,7 +548,7 @@ const readIframeHtml = useCallback(() => {
         doc.body.setAttribute("tabindex", previousTabIndex)
       }
     }
-  }, [isEditMode])
+  }, [isEditMode, updateLinkEditorSelection])
 
   useEffect(() => {
     onEditModeChange?.(isEditMode)
@@ -380,21 +569,95 @@ const readIframeHtml = useCallback(() => {
     }
   }, [isEditMode])
 
+  const handleLinkInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setLinkEditorValue(event.target.value)
+  }
+
+  const handleApplyLink = () => {
+    const targetEntry = getResolvedLinkTarget()
+    if (!targetEntry) {
+      showLinkMessage("Select a button or link first", "error")
+      return
+    }
+
+    const sanitized = sanitizeLinkUrl(linkEditorValue)
+    if (!sanitized) {
+      showLinkMessage("Enter a valid URL or path", "error")
+      return
+    }
+
+    if (targetEntry.tag === "a") {
+      targetEntry.element.setAttribute("href", sanitized)
+      if (isExternalLink(sanitized)) {
+        targetEntry.element.setAttribute("target", "_blank")
+        targetEntry.element.setAttribute("rel", "noopener noreferrer")
+      } else {
+        targetEntry.element.removeAttribute("target")
+        targetEntry.element.removeAttribute("rel")
+      }
+    } else {
+      targetEntry.element.setAttribute(BUTTON_LINK_ATTRIBUTE, sanitized)
+      targetEntry.element.setAttribute("onclick", `window.location.href='${escapeSingleQuotes(sanitized)}'`)
+    }
+
+    setLinkEditorValue(sanitized)
+    showLinkMessage("Link updated", "success")
+  }
+
+  const handleRemoveLink = () => {
+    const targetEntry = getResolvedLinkTarget()
+    if (!targetEntry) {
+      showLinkMessage("Select a button or link first", "error")
+      return
+    }
+
+    const hadLink =
+      targetEntry.tag === "a"
+        ? targetEntry.element.hasAttribute("href")
+        : Boolean(targetEntry.element.getAttribute(BUTTON_LINK_ATTRIBUTE))
+
+    if (!hadLink) {
+      showLinkMessage("Nothing to remove", "info")
+      return
+    }
+
+    if (targetEntry.tag === "a") {
+      targetEntry.element.removeAttribute("href")
+      targetEntry.element.removeAttribute("target")
+      targetEntry.element.removeAttribute("rel")
+    } else {
+      const previousLink = targetEntry.element.getAttribute(BUTTON_LINK_ATTRIBUTE)
+      targetEntry.element.removeAttribute(BUTTON_LINK_ATTRIBUTE)
+      if (previousLink) {
+        const onclickValue = targetEntry.element.getAttribute("onclick")
+        if (onclickValue && onclickValue.includes("window.location.href")) {
+          targetEntry.element.removeAttribute("onclick")
+        }
+      }
+    }
+
+    setLinkEditorValue("")
+    showLinkMessage("Link removed", "success")
+  }
+
   const handleToggleEditMode = () => {
     if (!displayHtml || isLoading || !iframeReady) {
       return
     }
 
     if (isEditMode) {
+      updateLinkEditorSelection(null)
       persistEditedHtml()
       setIsEditMode(false)
       return
     }
 
+    updateLinkEditorSelection(null)
     setIsEditMode(true)
   }
 
   const [copied, setCopied] = useState(false)
+  const activeLinkDescriptor = linkEditorTarget ? (linkEditorTarget.tag === "a" ? "anchor" : "button") : null
 
   const handleCopyCode = async () => {
     if (!displayHtml) return
@@ -509,6 +772,42 @@ const readIframeHtml = useCallback(() => {
           </div>
         </div>
       </div>
+      {isEditMode && (
+        <div className={styles.linkToolbar}>
+         
+          <div className={styles.linkToolbarControls}>
+            <input
+              type="text"
+              className={styles.linkInput}
+              placeholder="https://example.com or /contact"
+              value={linkEditorValue}
+              onChange={handleLinkInputChange}
+              disabled={!linkEditorTarget}
+            />
+            <button
+              className={styles.applyLinkButton}
+              onClick={handleApplyLink}
+              type="button"
+              disabled={!linkEditorTarget || !linkEditorValue.trim()}
+            >
+              Save link
+            </button>
+            <button
+              className={styles.removeLinkButton}
+              onClick={handleRemoveLink}
+              type="button"
+              disabled={!linkEditorTarget}
+            >
+              Remove link
+            </button>
+          </div>
+          {linkEditorMessage && (
+            <span className={styles.linkToolbarMessage} data-tone={linkEditorTone} aria-live="polite">
+              {linkEditorMessage}
+            </span>
+          )}
+        </div>
+      )}
       <div className={styles.previewWrapper}>
         {isLoading ? (
           <div className={styles.loadingState}>

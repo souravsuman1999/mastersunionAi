@@ -65,6 +65,141 @@
   gap: 12px;
 }
 
+.linkToolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(10, 10, 10, 0.7);
+  border-bottom: 1px solid var(--grey3);
+}
+
+.linkToolbarTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.linkToolbarTitle {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--white);
+  font-family: var(--go-medium);
+}
+
+.linkToolbarHint {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: var(--grey10);
+  font-family: var(--go-regular);
+}
+
+.linkToolbarClearSelection {
+  background: transparent;
+  border: 1px solid var(--grey3);
+  color: var(--grey10);
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: var(--go-medium);
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.linkToolbarClearSelection:hover {
+  color: var(--white);
+  border-color: orange;
+}
+
+.linkToolbarControls {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  align-items: center;
+}
+
+.linkInput {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--grey3);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--white);
+  font-size: 12px;
+  font-family: var(--go-medium);
+}
+
+.linkInput:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.linkInput::placeholder {
+  color: var(--grey10);
+}
+
+.applyLinkButton {
+  border: none;
+  border-radius: 8px;
+  background: orange;
+  color: var(--black);
+  font-size: 12px;
+  font-family: var(--go-medium);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+}
+
+.applyLinkButton:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(250, 209, 51, 0.35);
+}
+
+.applyLinkButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.removeLinkButton {
+  border: 1px solid var(--grey3);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--grey10);
+  font-size: 12px;
+  font-family: var(--go-medium);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.removeLinkButton:hover:not(:disabled) {
+  color: orange;
+  border-color: orange;
+}
+
+.removeLinkButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.linkToolbarMessage {
+  font-size: 11px;
+  font-family: var(--go-medium);
+  color: var(--grey10);
+}
+
+.linkToolbarMessage[data-tone="success"] {
+  color: orange;
+}
+
+.linkToolbarMessage[data-tone="error"] {
+  color: #ff7b7b;
+}
+
 .editModeGroup {
   display: flex;
   flex-direction: column;
@@ -296,6 +431,21 @@
   .secondaryButton {
     width: 100%;
     justify-content: center;
+  }
+
+  .linkToolbarTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .linkToolbarControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .applyLinkButton,
+  .removeLinkButton {
+    width: 100%;
   }
 
   .editStatus {
