@@ -42,19 +42,24 @@ export default function Home() {
 
   const selectedVersion = selectedVersionId ? versions.find((version) => version.id === selectedVersionId) : undefined
 
-  const handleGenerate = async (prompt: string) => {
+  const handleGenerate = async (prompt: string, imageData?: string) => {
     setHasGenerated(true)
     setIsLoading(true)
     setError("")
     setCurrentPrompt(prompt)
 
-    const payload: { prompt: string; baseHtml?: string } = { prompt }
-    // Always use the latest version (first in array) as base, or selected version if available
+    const payload: { prompt: string; baseHtml?: string; imageData?: string } = { prompt }
+    // Always use the latest version (first in array) as base for conversation flow
     // This ensures version 2 builds on version 1, version 3 builds on version 2, etc.
+    // The selected version only affects display, not the base for new generations
+    // This creates a continuous conversation where each new prompt edits the previous version
     const latestVersion = versions.length > 0 ? versions[0] : null
-    const baseHtmlCandidate = selectedVersion?.html ?? latestVersion?.html ?? generatedHtml
+    const baseHtmlCandidate = latestVersion?.html ?? generatedHtml
     if (baseHtmlCandidate?.trim()) {
       payload.baseHtml = baseHtmlCandidate
+    }
+    if (imageData) {
+      payload.imageData = imageData
     }
 
     try {
@@ -130,9 +135,12 @@ export default function Home() {
         <section className={styles.aiGenrateHero}>
           <div className={styles.container}>
             <div className={styles.aiGenrateHeroContent}>
-              <div>
-              <h1 className={styles.gradientText}>MU AI Page Generator</h1>
-              <p className={styles.aiGenrateSubtitle}>Transform your ideas into stunning pages with the power of AI</p>
+              <div className={styles.mucontentdiv} >
+                <div className={styles.muLogoAnimation}>
+                  <img loading="lazy" src="https://files.mastersunion.link/resources/animateds/logoanimationblack.gif" alt="MU Logo" />
+                </div>
+                <h1 className={styles.gradientText}> <span> WebStudio </span></h1>
+                <p className={styles.aiGenrateSubtitle}>Transform your ideas into stunning pages with the power of AI</p>
               </div>
               <div className={styles.welcomePromptArea}>
                 <PromptInput
@@ -182,7 +190,7 @@ export default function Home() {
             <div className={styles.historyHeader}>
               <div>
                 <p className={styles.promptEyebrow}>History</p>
-                <h3 className={styles.historyTitle}>Prompt versions</h3>
+                {/* <h3 className={styles.historyTitle}>Prompt versions</h3> */}
               </div>
               {selectedVersion && <span className={styles.historyActiveLabel}>Viewing {activeVersionLabel}</span>}
             </div>
@@ -198,9 +206,8 @@ export default function Home() {
                     type="button"
                     key={version.id}
                     onClick={() => handleVersionSelect(version.id)}
-                    className={`${styles.versionItem} ${
-                      selectedVersionId === version.id ? styles.versionItemActive : ""
-                    }`}
+                    className={`${styles.versionItem} ${selectedVersionId === version.id ? styles.versionItemActive : ""
+                      }`}
                   >
                     <div className={styles.versionHeader}>
                       <span className={styles.versionTitle}>Version {version.versionNumber}</span>

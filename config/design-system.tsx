@@ -27,6 +27,10 @@ IMPORTANT RULES:
 - Always include the provided validation structure and script from the Form System section so forms behave consistently without additional prompts.
 - For hero sections, prefer the classes:
   - .go-HeroTitle, .fr-TitleItalic, .go-HeroSubtitle, .textHighlight
+- Hero section layout rules:
+  - If the hero has an image on the right side (2-column layout with content + image), content should be left-aligned and NO background image should be used. Use .heroSectionTwoCol class.
+  - If the hero has a background image (full-width background), content should be centered. Use .heroSection class with background-image.
+  - ALWAYS include a background image in single-column hero sections (centered content) that is contextually relevant to the topic/content. The background image should be semantically related to the hero section's subject matter (e.g., technology images for tech programs, business images for business programs, education images for academic content, etc.).
 - For primary buttons, prefer:
   - .btnWhite, .btnBlack and their variants (.outline, .blurBg, .borderGradient, .btnMd, .btnSm, etc.)
 - For arrow buttons, use:
@@ -172,17 +176,17 @@ IMPORTANT RULES:
 body {
   margin: 0;
   padding: 0;
-  background: var(--black2);
+  background: var(--black);
   color: var(--white);
-  font-family: var(--go-regular);
+  font-family: "go-regular";
 }
 
 h4, h5, h6 {
-  font-family: var(--go-semibold);
+  font-family: "go-semibold";
 }
 
 p, li, span {
-  font-family: var(--go-regular);
+  font-family: "go-regular";
 }
 section{
   padding: 80px 0;
@@ -192,7 +196,7 @@ section{
    TYPOGRAPHY UTILITY CLASSES (HEADINGS / HERO)
    ============================================ */
 .go-HeroTitle {
-  font: normal 52px/1.2 var(--go-regular);
+  font: normal 52px/1.2 "go-regular";
 }
 
 .fr-TitleItalic {
@@ -205,7 +209,7 @@ section{
 }
 
 .go-HeroSubtitle {
-  font: normal 16px/1.5 var(--go-regular);
+  font: normal 16px/1.5 "go-regular";
 }
 
 .textHighlight {
@@ -218,11 +222,11 @@ section{
 }
 
 .go-BreatherHeadingTemp {
-  font: normal 42px/1.2 var(--go-regular);
+  font: normal 42px/1.2 "go-regular";
 }
 
 .go-HighlightHeading {
-  font: normal 30px/1.2 var(--go-regular);
+  font: normal 30px/1.2 "go-regular";
 }
 
 .fr-HeadingItalic {
@@ -241,7 +245,7 @@ section{
 }
 
 .go-BlockHeading {
-  font: normal 24px/1.2 var(--go-regular);
+  font: normal 24px/1.2 "go-regular";
 }
 
 .fr-BlockHeading {
@@ -253,7 +257,7 @@ section{
 }
 
 .go-BreatherHeading {
-  font: normal 28px/1.2 var(--go-regular);
+  font: normal 28px/1.2 "go-regular";
 }
 
 .fr-BreatherHeading {
@@ -276,7 +280,7 @@ section{
   padding: 60px 0;
 }
   .go-BreatherHeading {
-    font: normal 22px/1.2 var(--go-regular);
+    font: normal 22px/1.2 "go-regular";
   }
 
   .fr-BreatherHeading {
@@ -285,11 +289,11 @@ section{
   }
 
   .go-HeroSubtitle {
-    font: normal 14px/1.5 var(--go-regular);
+    font: normal 14px/1.5 "go-regular";
   }
 
   .go-HeroTitle {
-    font: normal 30px/1.2 var(--go-regular);
+    font: normal 30px/1.2 "go-regular";
   }
 
   .fr-TitleItalic {
@@ -303,7 +307,7 @@ section{
   }
 
   .go-BreatherHeadingTemp {
-    font: normal 30px/1.2 var(--go-regular);
+    font: normal 30px/1.2 "go-regular";
   }
 
   .fr-BreatherHeadingTemp {
@@ -311,7 +315,7 @@ section{
   }
 
   .go-HighlightHeading {
-    font: normal 22px/1.2 var(--go-regular);
+    font: normal 22px/1.2 "go-regular";
   }
 
   .fr-HeadingItalic {
@@ -323,10 +327,120 @@ section{
   }
 
   .go-BlockHeading {
-    font: normal 18px/1.5 var(--go-regular);
+    font: normal 18px/1.5 "go-regular";
   }
 }
 
+
+/* ============================================
+   HERO SECTION STYLES
+   ============================================ */
+
+/* Single-column hero with background image (centered content) */
+.heroSection {
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 0;
+}
+
+.heroSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(9, 9, 9, 0.4) 0%, rgba(9, 9, 9, 0.7) 100%);
+  z-index: 1;
+}
+
+.heroSectionContent {
+  position: relative;
+  z-index: 2;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Two-column hero with image on right (left-aligned content, NO background image) */
+.heroSectionTwoCol {
+  position: relative;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  padding: 120px 0;
+  background: var(--black);
+}
+
+.heroSectionTwoCol .container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.heroSectionTwoCol .heroSectionContent {
+  text-align: left;
+  padding: 0;
+}
+
+.heroSectionTwoCol .heroSectionImage {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.heroSectionBtnWrap {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+}
+
+@media (max-width: 767px) {
+  .heroSection {
+    min-height: 500px;
+    padding: 80px 0;
+  }
+  
+  .heroSectionContent {
+    padding: 0 16px;
+  }
+  
+  .heroSectionTwoCol {
+    min-height: auto;
+    padding: 80px 0;
+  }
+  
+  .heroSectionTwoCol .container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 0 16px;
+  }
+  
+  .heroSectionTwoCol .heroSectionContent {
+    text-align: center;
+  }
+  
+  .heroSectionBtnWrap {
+    flex-direction: column;
+    gap: 12px;
+    justify-content: center;
+  }
+}
 
 /* ============================================
    COMPONENT RULES (GENERIC)
@@ -337,7 +451,7 @@ button {
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
   border: none;
-  font-family: var(--go-semibold);
+  font-family: "go-semibold";
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -360,7 +474,7 @@ input, textarea {
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   color: var(--white);
-  font-family: var(--go-regular);
+  font-family: "go-regular";
 }
 
 input:focus, textarea:focus {
@@ -374,7 +488,7 @@ input:focus, textarea:focus {
   padding: 64px 0;
   display: flex;
   justify-content: center;
-  background: var(--black2);
+  background: var(--black);
 }
 
 .mu-formCard {
@@ -393,13 +507,13 @@ input:focus, textarea:focus {
 
 .mu-formCard h3 {
   margin: 0;
-  font: normal 24px/1.2 var(--go-semibold);
+  font: normal 24px/1.2 "go-semibold";
   color: var(--black);
 }
 
 .mu-formSubtitle {
   margin: 0;
-  font: normal 14px/1.6 var(--go-regular);
+  font: normal 14px/1.6 "go-regular";
   color: #585858;
 }
 
@@ -416,7 +530,7 @@ input:focus, textarea:focus {
 }
 
 .mu-formLabel {
-  font: normal 12px/1.4 var(--go-medium);
+  font: normal 12px/1.4 "go-medium";
   color: var(--black);
   display: flex;
   align-items: center;
@@ -434,7 +548,7 @@ input:focus, textarea:focus {
   padding: 12px;
   background: #fbfbfb;
   color: var(--black);
-  font: normal 13px/1.5 var(--go-regular);
+  font: normal 13px/1.5 "go-regular";
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -463,7 +577,7 @@ border: 1px solid transparent;
 }
 
 .mu-errorMessage {
-  font: normal 12px/1.4 var(--go-medium);
+  font: normal 12px/1.4 "go-medium";
   color: #DF2935;
   margin: 0;
   display: none;
@@ -482,7 +596,7 @@ border: 1px solid transparent;
   border-radius: 999px;
   border: 1px solid transparent;
   padding: 14px 46px;
-  font: normal 16px/1.4 var(--go-semibold);
+  font: normal 16px/1.4 "go-semibold";
   cursor: pointer;
   color: var(--black);
   background:
@@ -1330,33 +1444,87 @@ Always include this vanilla JS validation block after the form:
    (The model should follow this pattern)
    ============================================ */
 /*
-Use this structure for a typical UG hero:
+IMPORTANT HERO SECTION RULES:
+1. If hero has an image on the right (2-column layout): Use .heroSectionTwoCol, content left-aligned, NO background image
+2. If hero has NO image on the right (single-column): Use .heroSection with background-image, content centered
 
-<div class="heroSectionContent">
-  <h1 class="go-HeroTitle">
-    UG Programme in<br>
-    <span class="fr-TitleItalic">Technology and Business Management</span>
-  </h1>
+EXAMPLE 1: Single-column hero with background image (centered content)
+Use this when there's NO image element on the right side:
 
-  <p class="go-HeroSubtitle">
-    A 4-year bachelor's programme where you learn business by doing business.
-    <span class="textHighlight">See how we teach business at Masters' Union.</span>
-  </p>
+<section class="heroSection" style="background-image: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1920');">
+  <div class="heroSectionContent">
+    <h1 class="go-HeroTitle">
+      UG Programme in<br>
+      <span class="fr-TitleItalic">Technology and Business Management</span>
+    </h1>
 
-  <div class="heroSectionBtnWrap">
-    <a href="/ug-applynow" class="btnWhite">
-      Apply Now
-      <span class="arrowWrap">
-        <!-- arrow1 + arrow2 SVGs -->
-      </span>
-    </a>
+    <p class="go-HeroSubtitle">
+      A 4-year bachelor's programme where you learn business by doing business.
+      <span class="textHighlight">See how we teach business at Masters' Union.</span>
+    </p>
 
-    <button class="btnWhite outline">
-      <!-- play icon SVG -->
-      Watch Now
-    </button>
+    <div class="heroSectionBtnWrap">
+      <a href="/ug-applynow" class="btnWhite">
+        Apply Now
+        <span class="arrowWrap">
+          <svg class="arrow arrow1" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <svg class="arrow arrow2" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+      </a>
+
+      <button class="btnWhite outline">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M8 5v14l11-7z" fill="currentColor" />
+        </svg>
+        Watch Now
+      </button>
+    </div>
   </div>
-</div>
+</section>
+
+EXAMPLE 2: Two-column hero with image on right (left-aligned content, NO background image)
+Use this when there's an <img> element on the right side:
+
+<section class="heroSectionTwoCol">
+  <div class="container">
+    <div class="heroSectionContent">
+      <h1 class="go-HeroTitle">
+        UG Programme in<br>
+        <span class="fr-TitleItalic">Technology and Business Management</span>
+      </h1>
+
+      <p class="go-HeroSubtitle">
+        A 4-year bachelor's programme where you learn business by doing business.
+        <span class="textHighlight">See how we teach business at Masters' Union.</span>
+      </p>
+
+      <div class="heroSectionBtnWrap">
+        <a href="/ug-applynow" class="btnWhite">
+          Apply Now
+          <span class="arrowWrap">
+            <svg class="arrow arrow1" width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <svg class="arrow arrow2" width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </a>
+      </div>
+    </div>
+    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800" alt="Technology and Business" class="heroSectionImage" />
+  </div>
+</section>
+
+When selecting background images (for single-column heroes only):
+- Choose high-quality, relevant images from reputable sources (Unsplash, Pexels, etc.)
+- Ensure the image URL is publicly accessible
+- The image should complement the hero content and maintain readability with the overlay
+- Use descriptive, contextually appropriate image URLs that match the topic
 */
   `;
 }

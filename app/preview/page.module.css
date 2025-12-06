@@ -28,7 +28,7 @@
 .title {
   margin: 6px 0 0 0;
   font-size: 28px;
-  font-family: var(--go-bold);
+  font-family: "go-regular";
   color: var(--white);
 }
 
@@ -61,7 +61,7 @@
   padding: 10px 18px;
   border-radius: 10px;
   border: none;
-  font-family: var(--go-bold);
+  font-family: "go-regular";
   font-size: 14px;
   background: var(--yellow);
   color: var(--black);
