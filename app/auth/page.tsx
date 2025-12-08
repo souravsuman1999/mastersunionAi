@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import styles from "./page.module.css"
 
-const CORRECT_PASSWORD = "mu123"
+const CORRECT_PASSWORD = "mu12356"
 
 export default function AuthPage() {
   const [password, setPassword] = useState("")
