@@ -36,6 +36,8 @@ IMPORTANT RULES:
 - For arrow buttons, use:
   - .arrowWrap, .arrow1, .arrow2, .arrowhorizontal, .arrowhorizontalClone, .arrowWrapper, .arrowMain, .arrowClone
 - For carousels/sliders, use Swiper.js with the provided Swiper classes and styling
+- For video play buttons, ALWAYS include the Video Popup System HTML structure and JavaScript functions (see Video Popup System section). Use data-video-youtube or data-video-cdn attributes on play buttons to enable video playback in the popup.
+- For play button icons, ALWAYS use this image: https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg - DO NOT use SVG code or other play icons.
 
 /* ============================================
    MASTERS' UNION COLOR TOKENS
@@ -1440,6 +1442,283 @@ Always include this vanilla JS validation block after the form:
 
 
 /* ============================================
+   VIDEO POPUP SYSTEM
+   ============================================ */
+.popup {
+  position: fixed;
+  z-index: 99999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: hsla(0, 0%, 0%, 0.8);
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s linear 0.3s, opacity 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popupBody {
+  max-height: calc(100dvh - 50px);
+  max-width: calc(100vw - 50px);
+  height: auto;
+  min-height: 80vh;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  top: 8px;
+}
+
+.popup.active {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.floatingClose {
+  position: absolute;
+  line-height: 0;
+  z-index: 99;
+  right: -20px;
+  top: -20px;
+  cursor: pointer;
+}
+
+.floatingClose img {
+  width: 50px;
+  height: 50px;
+}
+
+.iframeHero {
+  width: inherit;
+  height: inherit;
+  background: var(--black);
+}
+
+.custom-video-area {
+  position: relative;
+  max-width: 100%;
+  width: 100%;
+  height: inherit;
+  margin: 0 auto;
+  border-radius: 20px;
+  overflow: hidden;
+  line-height: 0;
+  height: 80vh;
+}
+
+video.video-element, #html5video_MU {
+  position: relative;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-width: 100%;
+  width: 100%;
+  min-height: 100%;
+  margin: auto;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+#iframevideo_MU {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+}
+
+/* Play button icon styling - center only */
+.videoPlayButton {
+  display: block;
+  margin: 0 auto;
+}
+
+@media (max-width: 767px) {
+  .popupBody {
+    max-height: calc(100dvh - 30px);
+    max-width: calc(100vw - 30px);
+  }
+  
+  .floatingClose {
+    right: -10px;
+    top: -10px;
+  }
+  
+  .floatingClose img {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* ============================================
+   VIDEO POPUP USAGE
+   ============================================ */
+/*
+VIDEO POPUP SYSTEM:
+The video popup allows playing YouTube videos or CDN-hosted video files in a full-screen modal.
+
+PLAY BUTTON ICON:
+ALWAYS use this image for play button icons: https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg
+DO NOT use SVG code or other play icons. This is the standard play button icon for all video buttons.
+
+REQUIRED HTML STRUCTURE (add this before </body> in every generated page):
+<div class="popup" id="heroPopup">
+  <div class="popupBody">
+    <div class="floatingClose">
+      <img src="https://files.mastersunion.link/resources/svg/close.svg" alt="Close" onclick="closePopup();" />
+    </div>
+    <div class="custom-video-area" id="custom-popout-video">
+      <iframe class="iframeHero" id="iframevideo_MU" title="YouTube video player" frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen style="display: none;"></iframe>
+      <video id="html5video_MU" class="iframeHero" controls style="display: none;">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </div>
+</div>
+
+REQUIRED JAVASCRIPT (add this in the <script> block before </body>):
+function extractYouTubeId(url) {
+  const patterns = [
+    /(?:youtube\\.com\\/watch\\?v=|youtu\\.be\\/|youtube\\.com\\/embed\\/)([^&\\n?#]+)/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function openPopup(video, type = 'youtube', time = 0) {
+  const popup = document.getElementById('heroPopup');
+  const iframe = document.getElementById('iframevideo_MU');
+  const html5video = document.getElementById('html5video_MU');
+  
+  if (!popup || !iframe || !html5video) return;
+  
+  if (type === 'youtube') {
+    // Extract video ID if a full URL is provided
+    const videoId = extractYouTubeId(video) || video;
+    iframe.setAttribute('src', \`https://www.youtube.com/embed/\${videoId}?rel=0&autoplay=1&t=\${time}s\`);
+    iframe.style.display = 'block';
+    html5video.style.display = 'none';
+    html5video.removeAttribute('src');
+  } else if (type === 'cdn') {
+    iframe.style.display = 'none';
+    iframe.removeAttribute('src');
+    html5video.setAttribute('src', \`\${video}#t=\${time}\`);
+    html5video.style.display = 'block';
+    html5video.load();
+    html5video.play().catch(e => console.error('Video play error:', e));
+  }
+  
+  popup.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePopup() {
+  const popup = document.getElementById('heroPopup');
+  const iframe = document.getElementById('iframevideo_MU');
+  const html5video = document.getElementById('html5video_MU');
+  
+  if (!popup) return;
+  
+  if (iframe) {
+    iframe.removeAttribute('src');
+    iframe.style.display = 'none';
+  }
+  
+  if (html5video) {
+    html5video.pause();
+    html5video.removeAttribute('src');
+    html5video.load();
+    html5video.style.display = 'none';
+  }
+  
+  popup.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Close popup on background click
+document.addEventListener('DOMContentLoaded', function() {
+  const popup = document.getElementById('heroPopup');
+  if (popup) {
+    popup.addEventListener('click', function(e) {
+      if (e.target === popup) {
+        closePopup();
+      }
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && popup.classList.contains('active')) {
+        closePopup();
+      }
+    });
+  }
+});
+
+USAGE WITH PLAY BUTTONS:
+To make a button open a video popup, add data attributes and onclick handler:
+- data-video-youtube="VIDEO_ID_OR_URL" for YouTube videos
+- data-video-cdn="https://example.com/video.mp4" for CDN videos
+
+Example play button with YouTube video (full URL):
+<button class="btnWhite" data-video-youtube="https://www.youtube.com/watch?v=dQw4w9WgXcQ" onclick="openPopup('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'youtube', 0);">
+  <img src="https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg" alt="Play" />
+  Watch Video
+</button>
+
+Example play button with YouTube video (video ID only):
+<button class="btnWhite" data-video-youtube="dQw4w9WgXcQ" onclick="openPopup('dQw4w9WgXcQ', 'youtube', 0);">
+  <img src="https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg" alt="Play" />
+  Watch Video
+</button>
+
+Example play button with CDN video:
+<button class="btnWhite" data-video-cdn="https://example.com/video.mp4" onclick="openPopup('https://example.com/video.mp4', 'cdn', 0);">
+  <img src="https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg" alt="Play" />
+  Watch Video
+</button>
+
+For YouTube, you can use any of these formats in the onclick and data-video-youtube:
+- Full URL: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+- Short URL: https://youtu.be/dQw4w9WgXcQ
+- Embed URL: https://www.youtube.com/embed/dQw4w9WgXcQ
+- Video ID only: dQw4w9WgXcQ
+
+The openPopup function will automatically extract the video ID from YouTube URLs.
+
+AUTOMATIC PLAY BUTTON HANDLING (optional enhancement):
+You can also set up automatic handlers for all buttons with data-video-youtube or data-video-cdn attributes:
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('[data-video-youtube]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const video = btn.getAttribute('data-video-youtube');
+      openPopup(video, 'youtube', 0);
+    });
+  });
+  
+  document.querySelectorAll('[data-video-cdn]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const video = btn.getAttribute('data-video-cdn');
+      openPopup(video, 'cdn', 0);
+    });
+  });
+});
+
+IMPORTANT: Always include the popup HTML structure and JavaScript functions in every generated page that has video play buttons.
+*/
+
+
+/* ============================================
    HERO SECTION STRUCTURE GUIDELINE
    (The model should follow this pattern)
    ============================================ */
@@ -1476,10 +1755,8 @@ Use this when there's NO image element on the right side:
         </span>
       </a>
 
-      <button class="btnWhite outline">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M8 5v14l11-7z" fill="currentColor" />
-        </svg>
+      <button class="btnWhite outline" data-video-youtube="VIDEO_ID_OR_URL" onclick="openPopup('VIDEO_ID_OR_URL', 'youtube', 0);">
+        <img src="https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg" alt="Play" />
         Watch Now
       </button>
     </div>

@@ -37,6 +37,9 @@ const EDITABLE_TAGS = [
 const EDITABLE_SELECTOR = EDITABLE_TAGS.join(", ")
 const LINK_TARGET_ATTRIBUTE = "data-mu-link-target"
 const BUTTON_LINK_ATTRIBUTE = "data-mu-button-link"
+const VIDEO_TARGET_ATTRIBUTE = "data-mu-video-target"
+const VIDEO_YOUTUBE_ATTRIBUTE = "data-video-youtube"
+const VIDEO_CDN_ATTRIBUTE = "data-video-cdn"
 type LinkableTag = "a" | "button"
 
 const sanitizeLinkUrl = (rawValue: string) => {
@@ -81,6 +84,181 @@ interface PreviewProps {
 const getIframeDocument = (iframe: HTMLIFrameElement | null) => {
   if (!iframe) return null
   return iframe.contentDocument || iframe.contentWindow?.document || null
+}
+
+const getIframeWindow = (iframe: HTMLIFrameElement | null) => {
+  if (!iframe) return null
+  return iframe.contentWindow
+}
+
+const extractYouTubeId = (url: string): string | null => {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ]
+  for (const pattern of patterns) {
+    const match = url.match(pattern)
+    if (match) return match[1]
+  }
+  return null
+}
+
+const isYouTubeUrl = (url: string): boolean => {
+  return /youtube\.com|youtu\.be/i.test(url)
+}
+
+const isCdnUrl = (url: string): boolean => {
+  return /\.(mp4|webm|ogg|mov|avi|wmv|flv|mkv)(\?|#|$)/i.test(url) || /^https?:\/\/[^/]+\.(mp4|webm|ogg|mov|avi|wmv|flv|mkv)/i.test(url)
+}
+
+const injectVideoPopup = (doc: Document) => {
+  if (!doc.body || doc.getElementById("heroPopup")) {
+    return
+  }
+
+  const popup = doc.createElement("div")
+  popup.id = "heroPopup"
+  popup.className = "popup"
+  popup.innerHTML = `
+    <div class="popupBody">
+      <div class="floatingClose">
+        <img src="https://files.mastersunion.link/resources/svg/close.svg" alt="Close" />
+      </div>
+      <div class="custom-video-area" id="custom-popout-video">
+        <iframe class="iframeHero" id="iframevideo_MU" title="YouTube video player" frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen style="display: none;"></iframe>
+        <video id="html5video_MU" class="iframeHero" controls style="display: none;">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+  `
+  doc.body.appendChild(popup)
+
+  const iframeWindow = doc.defaultView || (doc as any).parentWindow
+  if (!iframeWindow) return
+
+    // Add openPopup function
+    ; (iframeWindow as any).openPopup = function (video: string, type: string = "youtube", time: number = 0) {
+      const popupEl = doc.getElementById("heroPopup")
+      const iframe = doc.getElementById("iframevideo_MU") as HTMLIFrameElement
+      const html5video = doc.getElementById("html5video_MU") as HTMLVideoElement
+
+      if (!popupEl || !iframe || !html5video) return
+
+      if (type === "youtube") {
+        iframe.setAttribute("src", `https://www.youtube.com/embed/${video}?rel=0&autoplay=1&t=${time}s`)
+        iframe.style.display = "block"
+        html5video.style.display = "none"
+        html5video.removeAttribute("src")
+      } else if (type === "cdn") {
+        iframe.style.display = "none"
+        iframe.removeAttribute("src")
+        html5video.setAttribute("src", `${video}#t=${time}`)
+        html5video.style.display = "block"
+        html5video.load()
+        html5video.play().catch((e) => console.error("Video play error:", e))
+      }
+
+      popupEl.classList.add("active")
+      doc.body.style.overflow = "hidden"
+    }
+
+    // Add closePopup function
+    ; (iframeWindow as any).closePopup = function () {
+      const popupEl = doc.getElementById("heroPopup")
+      const iframe = doc.getElementById("iframevideo_MU") as HTMLIFrameElement
+      const html5video = doc.getElementById("html5video_MU") as HTMLVideoElement
+
+      if (!popupEl) return
+
+      if (iframe) {
+        iframe.removeAttribute("src")
+        iframe.style.display = "none"
+      }
+
+      if (html5video) {
+        html5video.pause()
+        html5video.removeAttribute("src")
+        html5video.load()
+        html5video.style.display = "none"
+      }
+
+      popupEl.classList.remove("active")
+      doc.body.style.overflow = ""
+    }
+
+  // Attach close button handler
+  const closeBtn = popup.querySelector(".floatingClose")
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      ; (iframeWindow as any).closePopup()
+    })
+  }
+
+  // Close on background click
+  popup.addEventListener("click", (e) => {
+    if (e.target === popup) {
+      ; (iframeWindow as any).closePopup()
+    }
+  })
+
+  // Close on Escape key
+  doc.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && popup.classList.contains("active")) {
+      ; (iframeWindow as any).closePopup()
+    }
+  })
+}
+
+const setupPlayButtonHandlers = (doc: Document) => {
+  if (!doc.body) return
+
+  // Check if we're in edit mode
+  const isEditMode = doc.body.getAttribute("data-mu-edit-mode") === "true"
+
+  // Find all elements that could be play buttons
+  // Look for buttons with video attributes or elements with play icon indicators
+  const playButtons = doc.querySelectorAll(
+    `button[${VIDEO_YOUTUBE_ATTRIBUTE}], button[${VIDEO_CDN_ATTRIBUTE}], [${VIDEO_YOUTUBE_ATTRIBUTE}], [${VIDEO_CDN_ATTRIBUTE}]`
+  )
+
+  playButtons.forEach((button) => {
+    const element = button as HTMLElement
+    const youtubeLink = element.getAttribute(VIDEO_YOUTUBE_ATTRIBUTE)
+    const cdnLink = element.getAttribute(VIDEO_CDN_ATTRIBUTE)
+
+    // Remove existing click handlers by cloning
+    const existingHandler = (element as any)._muVideoHandler
+    if (existingHandler) {
+      element.removeEventListener("click", existingHandler)
+    }
+
+    // Only add popup handler if not in edit mode
+    // In edit mode, the click handler in the edit mode effect will handle selection
+    if (!isEditMode) {
+      const handler = (e: Event) => {
+        e.preventDefault()
+        e.stopPropagation()
+
+        const iframeWindow = doc.defaultView || (doc as any).parentWindow
+        if (!iframeWindow || !(iframeWindow as any).openPopup) return
+
+        if (youtubeLink) {
+          const videoId = extractYouTubeId(youtubeLink)
+          if (videoId) {
+            ; (iframeWindow as any).openPopup(videoId, "youtube", 0)
+          }
+        } else if (cdnLink) {
+          ; (iframeWindow as any).openPopup(cdnLink, "cdn", 0)
+        }
+      }
+
+      element.addEventListener("click", handler)
+        ; (element as any)._muVideoHandler = handler
+    }
+  })
 }
 
 const injectBaseStyles = (doc: Document) => {
@@ -146,6 +324,85 @@ const injectBaseStyles = (doc: Document) => {
       body[data-mu-edit-mode="true"] [${LINK_TARGET_ATTRIBUTE}="true"] {
         outline: 2px solid rgba(86, 149, 255, 0.95) !important;
         box-shadow: 0 0 0 3px rgba(86, 149, 255, 0.3) !important;
+      }
+      body[data-mu-edit-mode="true"] [${VIDEO_TARGET_ATTRIBUTE}="true"] {
+        outline: 2px solid rgba(250, 209, 51, 0.95) !important;
+        box-shadow: 0 0 0 3px rgba(250, 209, 51, 0.3) !important;
+      }
+      .popup {
+        position: fixed;
+        z-index: 99999;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: hsla(0, 0%, 0%, 0.8);
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s linear 0.3s, opacity 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .popupBody {
+        max-height: calc(100dvh - 50px);
+        max-width: calc(100vw - 50px);
+        height: auto;
+        min-height: 350px;
+        width: 100%;
+        margin: 0 auto;
+        position: relative;
+        top: 8px;
+      }
+      .popup.active {
+        opacity: 1;
+        visibility: visible;
+        transition-delay: 0s;
+      }
+      .floatingClose {
+        position: absolute;
+        line-height: 0;
+        z-index: 99;
+        right: -20px;
+        top: -20px;
+        cursor: pointer;
+      }
+      .floatingClose img {
+        width: 30px;
+        height: 30px;
+      }
+      .iframeHero {
+        width: inherit;
+        height: inherit;
+        background: var(--black, #000);
+      }
+      .custom-video-area {
+        position: relative;
+        max-width: 100%;
+        width: 100%;
+        height: inherit;
+        margin: 0 auto;
+        border-radius: 20px;
+        overflow: hidden;
+        line-height: 0;
+      }
+      video.video-element, #html5video_MU {
+        position: relative;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        min-width: 100%;
+        width: 100%;
+        min-height: 100%;
+        margin: auto;
+        border-radius: 20px;
+        overflow: hidden;
+      }
+      #iframevideo_MU {
+        width: 100%;
+        height: 100%;
+        border-radius: 20px;
       }
     `
   doc.head.appendChild(style)
@@ -252,6 +509,15 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   const highlightedLinkRef = useRef<HTMLElement | null>(null)
   const linkMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [videoEditorTarget, setVideoEditorTarget] = useState<HTMLElement | null>(null)
+  const [videoEditorYoutube, setVideoEditorYoutube] = useState("")
+  const [videoEditorCdn, setVideoEditorCdn] = useState("")
+  const [videoEditorLink, setVideoEditorLink] = useState("")
+  const [videoEditorMessage, setVideoEditorMessage] = useState("")
+  const [videoEditorTone, setVideoEditorTone] = useState<"info" | "success" | "error">("info")
+  const highlightedVideoRef = useRef<HTMLElement | null>(null)
+  const videoMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const clearHighlightedLink = useCallback(() => {
     if (highlightedLinkRef.current) {
       highlightedLinkRef.current.removeAttribute(LINK_TARGET_ATTRIBUTE)
@@ -259,10 +525,24 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
   }, [])
 
+  const clearHighlightedVideo = useCallback(() => {
+    if (highlightedVideoRef.current) {
+      highlightedVideoRef.current.removeAttribute(VIDEO_TARGET_ATTRIBUTE)
+      highlightedVideoRef.current = null
+    }
+  }, [])
+
   const resetLinkMessageTimer = useCallback(() => {
     if (linkMessageTimeoutRef.current) {
       clearTimeout(linkMessageTimeoutRef.current)
       linkMessageTimeoutRef.current = null
+    }
+  }, [])
+
+  const resetVideoMessageTimer = useCallback(() => {
+    if (videoMessageTimeoutRef.current) {
+      clearTimeout(videoMessageTimeoutRef.current)
+      videoMessageTimeoutRef.current = null
     }
   }, [])
 
@@ -276,6 +556,18 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       }, 2200)
     },
     [resetLinkMessageTimer]
+  )
+
+  const showVideoMessage = useCallback(
+    (message: string, tone: "info" | "success" | "error" = "info") => {
+      resetVideoMessageTimer()
+      setVideoEditorTone(tone)
+      setVideoEditorMessage(message)
+      videoMessageTimeoutRef.current = setTimeout(() => {
+        setVideoEditorMessage("")
+      }, 2200)
+    },
+    [resetVideoMessageTimer]
   )
 
   const updateLinkEditorSelection = useCallback(
@@ -334,7 +626,64 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     return linkEditorTarget
   }, [linkEditorTarget, updateLinkEditorSelection])
 
-const readIframeHtml = useCallback(() => {
+  const updateVideoEditorSelection = useCallback(
+    (element: HTMLElement | null) => {
+      resetVideoMessageTimer()
+      setVideoEditorMessage("")
+      setVideoEditorTone("info")
+
+      if (!element) {
+        clearHighlightedVideo()
+        setVideoEditorTarget(null)
+        setVideoEditorYoutube("")
+        setVideoEditorCdn("")
+        setVideoEditorLink("")
+        return
+      }
+
+      const doc = getIframeDocument(iframeRef.current)
+      if (!doc || !doc.body || !doc.body.contains(element)) {
+        clearHighlightedVideo()
+        setVideoEditorTarget(null)
+        setVideoEditorYoutube("")
+        setVideoEditorCdn("")
+        setVideoEditorLink("")
+        return
+      }
+
+      clearHighlightedVideo()
+      element.setAttribute(VIDEO_TARGET_ATTRIBUTE, "true")
+      highlightedVideoRef.current = element
+
+      const youtubeLink = element.getAttribute(VIDEO_YOUTUBE_ATTRIBUTE) ?? ""
+      const cdnLink = element.getAttribute(VIDEO_CDN_ATTRIBUTE) ?? ""
+      const tagName = element.tagName?.toLowerCase()
+      const currentLink =
+        tagName === "a" ? element.getAttribute("href") ?? "" : element.getAttribute(BUTTON_LINK_ATTRIBUTE) ?? ""
+
+      setVideoEditorTarget(element)
+      setVideoEditorYoutube(youtubeLink)
+      setVideoEditorCdn(cdnLink)
+      setVideoEditorLink(currentLink)
+    },
+    [clearHighlightedVideo, resetVideoMessageTimer]
+  )
+
+  const getResolvedVideoTarget = useCallback(() => {
+    if (!videoEditorTarget) {
+      return null
+    }
+
+    const doc = getIframeDocument(iframeRef.current)
+    if (!doc || !doc.body || !doc.body.contains(videoEditorTarget)) {
+      updateVideoEditorSelection(null)
+      return null
+    }
+
+    return videoEditorTarget
+  }, [videoEditorTarget, updateVideoEditorSelection])
+
+  const readIframeHtml = useCallback(() => {
     const doc = getIframeDocument(iframeRef.current)
     if (!doc || !doc.documentElement) {
       return null
@@ -347,6 +696,9 @@ const readIframeHtml = useCallback(() => {
     headClone?.querySelectorAll(`#${EDIT_STYLE_ID}`).forEach((node) => node.remove())
     htmlClone.querySelectorAll(`[${EDITABLE_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(EDITABLE_ATTRIBUTE))
     htmlClone.querySelectorAll(`[${LINK_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(LINK_TARGET_ATTRIBUTE))
+    htmlClone.querySelectorAll(`[${VIDEO_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(VIDEO_TARGET_ATTRIBUTE))
+    // Remove popup from cloned HTML
+    htmlClone.querySelectorAll("#heroPopup").forEach((node) => node.remove())
     bodyClone?.removeAttribute("contenteditable")
     bodyClone?.removeAttribute("data-mu-edit-mode")
     bodyClone?.removeAttribute("tabindex")
@@ -384,8 +736,10 @@ const readIframeHtml = useCallback(() => {
     return () => {
       resetLinkMessageTimer()
       clearHighlightedLink()
+      resetVideoMessageTimer()
+      clearHighlightedVideo()
     }
-  }, [resetLinkMessageTimer, clearHighlightedLink])
+  }, [resetLinkMessageTimer, clearHighlightedLink, resetVideoMessageTimer, clearHighlightedVideo])
 
   useEffect(() => {
     if (skipNextHtmlSync.current) {
@@ -403,13 +757,23 @@ const readIframeHtml = useCallback(() => {
 
   useEffect(() => {
     updateLinkEditorSelection(null)
+    updateVideoEditorSelection(null)
   }, [displayHtml, updateLinkEditorSelection])
 
   useEffect(() => {
     if (!isEditMode) {
       updateLinkEditorSelection(null)
+      updateVideoEditorSelection(null)
+    } else {
+      // Re-setup play button handlers when entering edit mode
+      const doc = getIframeDocument(iframeRef.current)
+      if (doc) {
+        setTimeout(() => {
+          setupPlayButtonHandlers(doc)
+        }, 100)
+      }
     }
-  }, [isEditMode, updateLinkEditorSelection])
+  }, [isEditMode, updateLinkEditorSelection, updateVideoEditorSelection])
 
   useEffect(() => {
     const iframe = iframeRef.current
@@ -422,6 +786,10 @@ const readIframeHtml = useCallback(() => {
         const iframeDoc = getIframeDocument(iframe)
         if (iframeDoc && iframeDoc.head && iframeDoc.body) {
           injectBaseStyles(iframeDoc)
+          injectVideoPopup(iframeDoc)
+          setTimeout(() => {
+            setupPlayButtonHandlers(iframeDoc)
+          }, 100)
           setIframeReady(true)
         } else {
           // Document not fully ready, retry after a short delay
@@ -429,6 +797,10 @@ const readIframeHtml = useCallback(() => {
             const retryDoc = getIframeDocument(iframe)
             if (retryDoc && retryDoc.head && retryDoc.body) {
               injectBaseStyles(retryDoc)
+              injectVideoPopup(retryDoc)
+              setTimeout(() => {
+                setupPlayButtonHandlers(retryDoc)
+              }, 100)
               setIframeReady(true)
             }
           }, 50)
@@ -450,8 +822,17 @@ const readIframeHtml = useCallback(() => {
     }
     checkReady()
 
+    // Re-setup handlers when HTML changes
+    const intervalId = setInterval(() => {
+      const doc = getIframeDocument(iframe)
+      if (doc && doc.body) {
+        setupPlayButtonHandlers(doc)
+      }
+    }, 1000)
+
     return () => {
       iframe.removeEventListener("load", handleLoad)
+      clearInterval(intervalId)
     }
   }, [displayHtml])
 
@@ -497,6 +878,59 @@ const readIframeHtml = useCallback(() => {
       return null
     }
 
+    const resolveVideoElement = (target: EventTarget | null): HTMLElement | null => {
+      if (!target) {
+        return null
+      }
+
+      const elementCandidate = target as Element | null
+      if (elementCandidate) {
+        // Check if element itself has video attributes
+        if (
+          elementCandidate.hasAttribute(VIDEO_YOUTUBE_ATTRIBUTE) ||
+          elementCandidate.hasAttribute(VIDEO_CDN_ATTRIBUTE)
+        ) {
+          return elementCandidate as HTMLElement
+        }
+
+        // Check if element is a .videoPlayButton div or inside one
+        if (typeof elementCandidate.closest === "function") {
+          const isVideoPlayButton = elementCandidate instanceof HTMLElement && elementCandidate.classList.contains("videoPlayButton")
+          const videoPlayButtonDiv = isVideoPlayButton
+            ? (elementCandidate as HTMLElement)
+            : (elementCandidate.closest(".videoPlayButton") as HTMLElement | null)
+
+          if (videoPlayButtonDiv && doc.body.contains(videoPlayButtonDiv)) {
+            // If the div itself has video attributes, return it
+            if (
+              videoPlayButtonDiv.hasAttribute(VIDEO_YOUTUBE_ATTRIBUTE) ||
+              videoPlayButtonDiv.hasAttribute(VIDEO_CDN_ATTRIBUTE)
+            ) {
+              return videoPlayButtonDiv
+            }
+
+            // Otherwise, look for a button inside the div with video attributes
+            const buttonInside = videoPlayButtonDiv.querySelector(
+              `button[${VIDEO_YOUTUBE_ATTRIBUTE}], button[${VIDEO_CDN_ATTRIBUTE}]`
+            ) as HTMLElement | null
+            if (buttonInside && doc.body.contains(buttonInside)) {
+              return buttonInside
+            }
+          }
+
+          // Check if element is inside a play button (existing logic)
+          const match = elementCandidate.closest(
+            `button[${VIDEO_YOUTUBE_ATTRIBUTE}], button[${VIDEO_CDN_ATTRIBUTE}], [${VIDEO_YOUTUBE_ATTRIBUTE}], [${VIDEO_CDN_ATTRIBUTE}]`
+          ) as HTMLElement | null
+          if (match && doc.body.contains(match)) {
+            return match
+          }
+        }
+      }
+
+      return null
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault()
@@ -512,16 +946,36 @@ const readIframeHtml = useCallback(() => {
     }
 
     const handleClick = (event: MouseEvent) => {
+      // In edit mode, prioritize selection over action
+      // Check for video element first
+      const videoElement = resolveVideoElement(event.target)
+      if (videoElement) {
+        event.preventDefault()
+        event.stopPropagation()
+        updateVideoEditorSelection(videoElement)
+        updateLinkEditorSelection(null)
+        return
+      }
+
+      // Then check for link element
       const linkElement = resolveLinkableElement(event.target)
       if (linkElement) {
         event.preventDefault()
         updateLinkEditorSelection(linkElement)
+        updateVideoEditorSelection(null)
       } else {
         updateLinkEditorSelection(null)
+        updateVideoEditorSelection(null)
       }
     }
 
     const handleFocusIn = (event: FocusEvent) => {
+      const videoElement = resolveVideoElement(event.target)
+      if (videoElement) {
+        updateVideoEditorSelection(videoElement)
+        return
+      }
+
       const linkElement = resolveLinkableElement(event.target)
       if (linkElement) {
         updateLinkEditorSelection(linkElement)
@@ -547,8 +1001,13 @@ const readIframeHtml = useCallback(() => {
       } else {
         doc.body.setAttribute("tabindex", previousTabIndex)
       }
+
+      // Re-setup play button handlers when exiting edit mode
+      setTimeout(() => {
+        setupPlayButtonHandlers(doc)
+      }, 100)
     }
-  }, [isEditMode, updateLinkEditorSelection])
+  }, [isEditMode, updateLinkEditorSelection, updateVideoEditorSelection])
 
   useEffect(() => {
     onEditModeChange?.(isEditMode)
@@ -640,6 +1099,171 @@ const readIframeHtml = useCallback(() => {
     showLinkMessage("Link removed", "success")
   }
 
+  const handleVideoYoutubeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setVideoEditorYoutube(event.target.value)
+  }
+
+  const handleVideoCdnChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setVideoEditorCdn(event.target.value)
+  }
+
+  const handleVideoLinkChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setVideoEditorLink(event.target.value)
+  }
+
+  const handleApplyVideo = () => {
+    const target = getResolvedVideoTarget()
+    if (!target) {
+      showVideoMessage("Select a play button first", "error")
+      return
+    }
+
+    const youtubeValue = videoEditorYoutube.trim()
+    const cdnValue = videoEditorCdn.trim()
+    const linkValue = videoEditorLink.trim()
+
+    if (!youtubeValue && !cdnValue && !linkValue) {
+      showVideoMessage("Enter at least one video link or navigation link", "error")
+      return
+    }
+
+    // Validate YouTube URL if provided
+    if (youtubeValue) {
+      if (!isYouTubeUrl(youtubeValue) && !extractYouTubeId(youtubeValue)) {
+        showVideoMessage("Enter a valid YouTube URL or video ID", "error")
+        return
+      }
+    }
+
+    // Validate CDN URL if provided
+    if (cdnValue) {
+      if (!isCdnUrl(cdnValue) && !cdnValue.startsWith("http")) {
+        showVideoMessage("Enter a valid video URL", "error")
+        return
+      }
+    }
+
+    if (youtubeValue) {
+      target.setAttribute(VIDEO_YOUTUBE_ATTRIBUTE, youtubeValue)
+    } else {
+      target.removeAttribute(VIDEO_YOUTUBE_ATTRIBUTE)
+    }
+
+    if (cdnValue) {
+      target.setAttribute(VIDEO_CDN_ATTRIBUTE, cdnValue)
+    } else {
+      target.removeAttribute(VIDEO_CDN_ATTRIBUTE)
+    }
+
+    // Apply regular link if provided
+    const tagName = target.tagName?.toLowerCase()
+
+    if (linkValue) {
+      const sanitized = sanitizeLinkUrl(linkValue)
+      if (sanitized) {
+        if (tagName === "a") {
+          target.setAttribute("href", sanitized)
+          if (isExternalLink(sanitized)) {
+            target.setAttribute("target", "_blank")
+            target.setAttribute("rel", "noopener noreferrer")
+          } else {
+            target.removeAttribute("target")
+            target.removeAttribute("rel")
+          }
+        } else {
+          target.setAttribute(BUTTON_LINK_ATTRIBUTE, sanitized)
+          target.setAttribute("onclick", `window.location.href='${escapeSingleQuotes(sanitized)}'`)
+        }
+      }
+    } else {
+      // Remove link if empty
+      if (tagName === "a") {
+        target.removeAttribute("href")
+        target.removeAttribute("target")
+        target.removeAttribute("rel")
+      } else {
+        const previousLink = target.getAttribute(BUTTON_LINK_ATTRIBUTE)
+        target.removeAttribute(BUTTON_LINK_ATTRIBUTE)
+        if (previousLink) {
+          const onclickValue = target.getAttribute("onclick")
+          if (onclickValue && onclickValue.includes("window.location.href")) {
+            target.removeAttribute("onclick")
+          }
+        }
+      }
+    }
+
+    // Re-setup handlers after attribute change
+    const doc = getIframeDocument(iframeRef.current)
+    if (doc) {
+      setTimeout(() => {
+        setupPlayButtonHandlers(doc)
+      }, 50)
+    }
+
+    showVideoMessage("Links updated", "success")
+  }
+
+  const handleRemoveVideo = () => {
+    const target = getResolvedVideoTarget()
+    if (!target) {
+      showVideoMessage("Select a play button first", "error")
+      return
+    }
+
+    const hadYoutube = target.hasAttribute(VIDEO_YOUTUBE_ATTRIBUTE)
+    const hadCdn = target.hasAttribute(VIDEO_CDN_ATTRIBUTE)
+
+    if (!hadYoutube && !hadCdn) {
+      showVideoMessage("Nothing to remove", "info")
+      return
+    }
+
+    target.removeAttribute(VIDEO_YOUTUBE_ATTRIBUTE)
+    target.removeAttribute(VIDEO_CDN_ATTRIBUTE)
+
+    setVideoEditorYoutube("")
+    setVideoEditorCdn("")
+    showVideoMessage("Video links removed", "success")
+  }
+
+  const handleRemoveVideoLink = () => {
+    const target = getResolvedVideoTarget()
+    if (!target) {
+      showVideoMessage("Select a play button first", "error")
+      return
+    }
+
+    const tagName = target.tagName?.toLowerCase()
+    const hadLink =
+      tagName === "a"
+        ? target.hasAttribute("href")
+        : Boolean(target.getAttribute(BUTTON_LINK_ATTRIBUTE))
+
+    if (!hadLink) {
+      showVideoMessage("No link to remove", "info")
+      return
+    }
+
+    if (tagName === "a") {
+      target.removeAttribute("href")
+      target.removeAttribute("target")
+      target.removeAttribute("rel")
+    } else {
+      const previousLink = target.getAttribute(BUTTON_LINK_ATTRIBUTE)
+      target.removeAttribute(BUTTON_LINK_ATTRIBUTE)
+      if (previousLink) {
+        const onclickValue = target.getAttribute("onclick")
+        if (onclickValue && onclickValue.includes("window.location.href")) {
+          target.removeAttribute("onclick")
+        }
+      }
+    }
+
+    setVideoEditorLink("")
+    showVideoMessage("Link removed", "success")
+  }
+
   const handleToggleEditMode = () => {
     if (!displayHtml || isLoading || !iframeReady) {
       return
@@ -661,7 +1285,7 @@ const readIframeHtml = useCallback(() => {
 
   const handleCopyCode = async () => {
     if (!displayHtml) return
-    
+
     let htmlToCopy = displayHtml
     if (isEditMode) {
       const updated = persistEditedHtml()
@@ -757,15 +1381,15 @@ const readIframeHtml = useCallback(() => {
               disabled={!displayHtml || isLoading || !iframeReady}
               type="button"
             >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                </svg>
+              </svg>
               Edit mode
               <span className={`${styles.editChip} ${isEditMode ? styles.editChipActive : ""}`}>
                 {isEditMode ? "ON" : "OFF"}
               </span>
-          </button>
+            </button>
             {/* <span className={`${styles.editStatus} ${isEditMode ? styles.editStatusActive : ""}`}>
               {isEditMode ? "Editing in preview" : "Preview locked"}
             </span> */}
@@ -773,40 +1397,115 @@ const readIframeHtml = useCallback(() => {
         </div>
       </div>
       {isEditMode && (
-        <div className={styles.linkToolbar}>
-         
-          <div className={styles.linkToolbarControls}>
-            <input
-              type="text"
-              className={styles.linkInput}
-              placeholder="https://example.com or /contact"
-              value={linkEditorValue}
-              onChange={handleLinkInputChange}
-              disabled={!linkEditorTarget}
-            />
-            <button
-              className={styles.applyLinkButton}
-              onClick={handleApplyLink}
-              type="button"
-              disabled={!linkEditorTarget || !linkEditorValue.trim()}
-            >
-              Save link
-            </button>
-            <button
-              className={styles.removeLinkButton}
-              onClick={handleRemoveLink}
-              type="button"
-              disabled={!linkEditorTarget}
-            >
-              Remove link
-            </button>
-          </div>
-          {linkEditorMessage && (
-            <span className={styles.linkToolbarMessage} data-tone={linkEditorTone} aria-live="polite">
-              {linkEditorMessage}
-            </span>
+        <>
+          {linkEditorTarget && (
+            <div className={styles.linkToolbar}>
+              <div className={styles.linkToolbarControls}>
+                <input
+                  type="text"
+                  className={styles.linkInput}
+                  placeholder="https://example.com or /contact"
+                  value={linkEditorValue}
+                  onChange={handleLinkInputChange}
+                  disabled={!linkEditorTarget}
+                />
+                <button
+                  className={styles.applyLinkButton}
+                  onClick={handleApplyLink}
+                  type="button"
+                  disabled={!linkEditorTarget || !linkEditorValue.trim()}
+                >
+                  Save link
+                </button>
+                <button
+                  className={styles.removeLinkButton}
+                  onClick={handleRemoveLink}
+                  type="button"
+                  disabled={!linkEditorTarget}
+                >
+                  Remove link
+                </button>
+              </div>
+              {linkEditorMessage && (
+                <span className={styles.linkToolbarMessage} data-tone={linkEditorTone} aria-live="polite">
+                  {linkEditorMessage}
+                </span>
+              )}
+            </div>
           )}
-        </div>
+          {videoEditorTarget && (
+            <div className={styles.linkToolbar}>
+              <div className={styles.linkToolbarTop}>
+                <div>
+                  <h3 className={styles.linkToolbarTitle}>Edit Video Links</h3>
+                  <p className={styles.linkToolbarHint}>Enter YouTube URL, CDN video URL, or regular navigation link</p>
+                </div>
+                <button
+                  className={styles.linkToolbarClearSelection}
+                  onClick={() => updateVideoEditorSelection(null)}
+                  type="button"
+                >
+                  Clear selection
+                </button>
+              </div>
+              <div className={styles.linkToolbarControls}>
+                <input
+                  type="text"
+                  className={styles.linkInput}
+                  placeholder="YouTube URL (e.g., https://youtube.com/watch?v=...) or Video ID"
+                  value={videoEditorYoutube}
+                  onChange={handleVideoYoutubeChange}
+                  disabled={!videoEditorTarget}
+                />
+                <input
+                  type="text"
+                  className={styles.linkInput}
+                  placeholder="CDN Video URL (e.g., https://example.com/video.mp4)"
+                  value={videoEditorCdn}
+                  onChange={handleVideoCdnChange}
+                  disabled={!videoEditorTarget}
+                />
+                <input
+                  type="text"
+                  className={styles.linkInput}
+                  placeholder="Regular Link (e.g., https://example.com or /contact)"
+                  value={videoEditorLink}
+                  onChange={handleVideoLinkChange}
+                  disabled={!videoEditorTarget}
+                />
+                <button
+                  className={styles.applyLinkButton}
+                  onClick={handleApplyVideo}
+                  type="button"
+                  disabled={!videoEditorTarget || (!videoEditorYoutube.trim() && !videoEditorCdn.trim() && !videoEditorLink.trim())}
+                >
+                  Save
+                </button>
+                <button
+                  className={styles.removeLinkButton}
+                  onClick={handleRemoveVideo}
+                  type="button"
+                  disabled={!videoEditorTarget}
+                >
+                  Remove video
+                </button>
+                <button
+                  className={styles.removeLinkButton}
+                  onClick={handleRemoveVideoLink}
+                  type="button"
+                  disabled={!videoEditorTarget || !videoEditorLink.trim()}
+                >
+                  Remove link
+                </button>
+              </div>
+              {videoEditorMessage && (
+                <span className={styles.linkToolbarMessage} data-tone={videoEditorTone} aria-live="polite">
+                  {videoEditorMessage}
+                </span>
+              )}
+            </div>
+          )}
+        </>
       )}
       <div className={styles.previewWrapper}>
         {isLoading ? (
