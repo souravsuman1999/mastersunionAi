@@ -1489,6 +1489,8 @@ Always include this vanilla JS validation block after the form:
 .floatingClose img {
   width: 50px;
   height: 50px;
+  cursor: pointer;
+
 }
 
 .iframeHero {
