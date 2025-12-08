@@ -1463,7 +1463,7 @@ Always include this vanilla JS validation block after the form:
 .popupBody {
   max-height: calc(100dvh - 50px);
   max-width: calc(100vw - 50px);
-  height: auto;
+  height: 80vh;
   min-height: 80vh;
   width: 100%;
   margin: 0 auto;

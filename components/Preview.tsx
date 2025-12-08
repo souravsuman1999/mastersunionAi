@@ -347,8 +347,8 @@ const injectBaseStyles = (doc: Document) => {
       .popupBody {
         max-height: calc(100dvh - 50px);
         max-width: calc(100vw - 50px);
-        height: auto;
-        min-height: 350px;
+        height: 80vh;
+        min-height: 80vh;
         width: 100%;
         margin: 0 auto;
         position: relative;
@@ -380,7 +380,7 @@ const injectBaseStyles = (doc: Document) => {
         position: relative;
         max-width: 100%;
         width: 100%;
-        height: inherit;
+        height: 80vh;
         margin: 0 auto;
         border-radius: 20px;
         overflow: hidden;
