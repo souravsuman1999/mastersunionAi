@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Suspense, useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import styles from "./page.module.css"
 
 type PreviewStatus = "loading" | "ready" | "error"
@@ -46,14 +46,33 @@ function PreviewFallback() {
 }
 
 function FullPreviewContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const previewId = searchParams.get("id")
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [status, setStatus] = useState<PreviewStatus>("loading")
   const [message, setMessage] = useState("Loading preview...")
   const [html, setHtml] = useState("")
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
+    // Check authentication on mount
+    if (typeof window !== "undefined") {
+      const authStatus = localStorage.getItem("mu_auth") === "true"
+      if (!authStatus) {
+        router.push("/auth")
+      } else {
+        setIsAuthenticated(true)
+        setIsCheckingAuth(false)
+      }
+    }
+  }, [router])
+
+  useEffect(() => {
+    // Only load preview if authenticated
+    if (!isAuthenticated || isCheckingAuth) return
+
     if (!previewId) {
       setStatus("error")
       setMessage("Missing preview identifier.")
@@ -81,7 +100,7 @@ function FullPreviewContent() {
         window.localStorage.removeItem(`preview:${previewId}`)
       }
     }
-  }, [previewId])
+  }, [previewId, isAuthenticated, isCheckingAuth])
 
   const handleCopyHtml = async () => {
     if (!html) return
@@ -92,6 +111,22 @@ function FullPreviewContent() {
     } catch (error) {
       console.error("[full-preview] copy failed", error)
     }
+  }
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth || !isAuthenticated) {
+    return (
+      <div style={{ 
+        minHeight: "100vh", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        background: "#000000",
+        color: "#ffffff"
+      }}>
+        <p>Loading...</p>
+      </div>
+    )
   }
 
   return (

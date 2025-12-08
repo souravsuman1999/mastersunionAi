@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
 import styles from "./page.module.css"
@@ -30,6 +31,9 @@ const generateVersionId = () => {
 }
 
 export default function Home() {
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [generatedHtml, setGeneratedHtml] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -40,7 +44,36 @@ export default function Home() {
   const [versionCounter, setVersionCounter] = useState(0)
   const [isPreviewEditMode, setIsPreviewEditMode] = useState(false)
 
+  useEffect(() => {
+    // Check authentication on mount
+    if (typeof window !== "undefined") {
+      const authStatus = localStorage.getItem("mu_auth") === "true"
+      if (!authStatus) {
+        router.push("/auth")
+      } else {
+        setIsAuthenticated(true)
+        setIsCheckingAuth(false)
+      }
+    }
+  }, [router])
+
   const selectedVersion = selectedVersionId ? versions.find((version) => version.id === selectedVersionId) : undefined
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth || !isAuthenticated) {
+    return (
+      <div style={{ 
+        minHeight: "100vh", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        background: "#000000",
+        color: "#ffffff"
+      }}>
+        <p>Loading...</p>
+      </div>
+    )
+  }
 
   const handleGenerate = async (prompt: string, imageData?: string) => {
     setHasGenerated(true)
