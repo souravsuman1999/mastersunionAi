@@ -9,9 +9,6 @@ import {
 import { useRouter } from "next/navigation"
 import styles from "./page.module.css"
 
-const CORRECT_PASSWORD = "mu12356"
-const USER_STORE_KEY = "mu_auth_users"
-
 const initialFormState = {
   fullName: "",
   email: "",
@@ -19,13 +16,17 @@ const initialFormState = {
   confirmPassword: "",
 }
 
+
+function parseJwt(token: string) {
+  const base64Url = token.split(".")[1];
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  return JSON.parse(atob(base64));
+}
+
+
+
 type AuthMode = "login" | "signup" | "forgot"
 type PasswordField = "password" | "confirmPassword"
-type StoredUser = {
-  fullName: string
-  password: string
-}
-type StoredUsers = Record<string, StoredUser>
 
 type IconProps = {
   className?: string
@@ -69,21 +70,6 @@ const EyeOffIcon = ({ className }: IconProps) => (
   </svg>
 )
 
-const readStoredUsers = (): StoredUsers => {
-  if (typeof window === "undefined") return {}
-  try {
-    const raw = localStorage.getItem(USER_STORE_KEY)
-    return raw ? (JSON.parse(raw) as StoredUsers) : {}
-  } catch {
-    return {}
-  }
-}
-
-const writeStoredUsers = (users: StoredUsers) => {
-  if (typeof window === "undefined") return
-  localStorage.setItem(USER_STORE_KEY, JSON.stringify(users))
-}
-
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>("login")
   const [formValues, setFormValues] = useState(initialFormState)
@@ -94,8 +80,14 @@ export default function AuthPage() {
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const router = useRouter()
 
+  const SIGNUP_API = "http://localhost:32000/api/registerAIUser"
+  const LOGIN_API = "http://localhost:32000/api/loginAIUser"
+  const GOOGLE_CLIENT_ID = "512709816866-vh5vpmcvll1l6qamudif1kceqq72059c.apps.googleusercontent.com"
+
+  // Check if authenticated
   useEffect(() => {
     if (typeof window !== "undefined") {
       const isAuthenticated = localStorage.getItem("mu_auth") === "true"
@@ -105,12 +97,194 @@ export default function AuthPage() {
     }
   }, [router])
 
+  // Load Google Identity Services script
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    // Check if script is already loaded
+    const scriptId = "google-identity-script"
+    if (document.getElementById(scriptId)) {
+      initializeGoogleAuth()
+      return
+    }
+
+    const script = document.createElement("script")
+    script.id = scriptId
+    script.src = "https://accounts.google.com/gsi/client"
+    script.async = true
+    script.defer = true
+    script.onload = () => {
+      console.log("Google Identity Services script loaded")
+      initializeGoogleAuth()
+    }
+    script.onerror = () => {
+      console.error("Failed to load Google Identity Services script")
+      setError("Failed to load Google Sign-In. Please refresh the page.")
+    }
+    
+    document.body.appendChild(script)
+
+    return () => {
+      const script = document.getElementById(scriptId)
+      if (script) script.remove()
+    }
+  }, [])
+
+  // Initialize Google Auth
+  const initializeGoogleAuth = () => {
+    if (typeof window === "undefined" || !window.google) {
+      return
+    }
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredentialResponse,
+        ux_mode: "popup",
+      })
+
+      // Render the Google Sign-In button
+      renderGoogleButton()
+      
+    } catch (error) {
+      console.error("Error initializing Google Auth:", error)
+    }
+  }
+
+  // Render Google Sign-In button
+  const renderGoogleButton = () => {
+    if (typeof window === "undefined" || !window.google || !window.google.accounts) return
+
+    const container = document.getElementById("googleSignInButton")
+    if (!container) return
+
+    try {
+      window.google.accounts.id.renderButton(
+        container,
+        {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: mode === "signup" ? "signup_with" : "signin_with",
+          shape: "rectangular",
+          logo_alignment: "left",
+          width: "100%", // Full width to match your custom button
+        }
+      )
+      
+      // Also show the One Tap prompt for returning users
+    } catch (error) {
+      console.error("Error rendering Google button:", error)
+    }
+  }
+
+  // Re-render Google button when mode changes
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.google && window.google.accounts) {
+      setTimeout(renderGoogleButton, 100)
+    }
+  }, [mode])
+
+
+
+
+
+
+
+  // Handle Google credential response
+ const handleGoogleCredentialResponse = async (response: any) => {
+  setIsGoogleLoading(true);
+  setError("");
+  setMessage("");
+
+  try {
+    const token = response?.credential;
+    if (!token) throw new Error("No credential received from Google");
+
+    const decoded = parseJwt(token);
+    const { email, name } = decoded || {};
+    if (!email) throw new Error("No email received from Google");
+
+    const emailLower = email.toLowerCase();
+
+    // First try login (quick path)
+    let res = await fetch(LOGIN_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailLower, isGoogle: true }),
+    });
+
+    // If login returned 200 and success true -> done
+    if (res.ok) {
+      const data = await safeParseJson(res);
+      if (data?.success) {
+        persistAndRedirect(data);
+        return;
+      }
+      // if success false but meaningful message (e.g. user not found), continue to signup
+      if (data?.message && /not found|not exists|doesn't exist/i.test(data.message)) {
+        // fall through to signup
+      } else {
+        // some other server-side error — show and stop
+        throw new Error(data?.message || "Login failed");
+      }
+    } else {
+      // non-OK from login — try signup (maybe user doesn't exist)
+      // but if 5xx, we still may try signup — let's attempt signup
+    }
+
+    // Try signup
+    res = await fetch(SIGNUP_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailLower, fullName: name, isGoogle: true }),
+    });
+
+    if (!res.ok) {
+      const data = await safeParseJson(res);
+      throw new Error(data?.message || `Signup failed (status ${res.status})`);
+    }
+
+    const data = await safeParseJson(res);
+    if (!data?.success) throw new Error(data?.message || "Signup failed");
+
+    // success
+    persistAndRedirect(data);
+
+  } catch (err: any) {
+    console.error("Google auth error:", err);
+    setError(err?.message || "Server error");
+  } finally {
+    setIsGoogleLoading(false);
+  }
+};
+
+// helper: parse JSON safely
+async function safeParseJson(res: Response) {
+  try {
+    return await res.json();
+  } catch (e) {
+    return { success: false, message: `Invalid JSON response (status ${res.status})` };
+  }
+}
+
+// helper: save session and redirect
+function persistAndRedirect(data: any) {
+  localStorage.setItem("mu_auth", "true");
+  localStorage.setItem("mu_email", data.data.email);
+  localStorage.setItem("mu_fullName", data.data.fullName || data.data.email.split("@")[0]);
+  localStorage.setItem("mu_isGoogle", "true");
+  router.push("/");
+}
+
+
   const handleModeChange = (nextMode: AuthMode) => {
     if (nextMode === mode) return
     setMode(nextMode)
     setError("")
     setMessage("")
     setIsLoading(false)
+    setIsGoogleLoading(false)
     setPasswordVisibility({
       password: false,
       confirmPassword: false,
@@ -124,14 +298,14 @@ export default function AuthPage() {
 
   const handleInputChange =
     (field: keyof typeof initialFormState) =>
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setFormValues((prev) => ({
-        ...prev,
-        [field]: event.target.value,
-      }))
-      setError("")
-      setMessage("")
-    }
+      (event: ChangeEvent<HTMLInputElement>) => {
+        setFormValues((prev) => ({
+          ...prev,
+          [field]: event.target.value,
+        }))
+        setError("")
+        setMessage("")
+      }
 
   const togglePasswordVisibility = (field: PasswordField) => {
     setPasswordVisibility((prev) => ({
@@ -152,7 +326,7 @@ export default function AuthPage() {
   }
 
   const isSubmitDisabled = () => {
-    if (isLoading) return true
+    if (isLoading || isGoogleLoading) return true
     if (mode === "login") {
       return !formValues.email.trim() || !formValues.password.trim()
     }
@@ -175,82 +349,97 @@ export default function AuthPage() {
     setMessage("")
     setIsLoading(true)
 
-    await new Promise((resolve) => setTimeout(resolve, 400))
+    const email = formValues.email.trim().toLowerCase()
+    const password = formValues.password.trim()
+    const fullName = formValues.fullName.trim()
 
-    const friendlyEmail = formValues.email.trim()
-    const normalizedEmail = friendlyEmail.toLowerCase()
+    try {
+      if (mode === "login") {
+        const res = await fetch(LOGIN_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        })
 
-    if (mode === "login") {
-      const storedUsers = readStoredUsers()
-      const existingUser = storedUsers[normalizedEmail]
+        const data = await res.json()
 
-      if (existingUser && existingUser.password === formValues.password) {
+        if (!data.success) {
+          setError(data.message || "Invalid email or password")
+          setIsLoading(false)
+          return
+        }
+
         localStorage.setItem("mu_auth", "true")
+        localStorage.setItem("mu_email", data.data.email)
+        const name = data.data.fullName || data.data.email.split("@")[0]
+        localStorage.setItem("mu_fullName", name)
+        
+        if (data.data.token) {
+          localStorage.setItem("mu_token", data.data.token)
+        }
+        
         router.push("/")
         return
       }
 
-      if (formValues.password === CORRECT_PASSWORD) {
+      if (mode === "signup") {
+        if (!fullName || fullName.length < 2) {
+          setError("Please enter a valid full name.")
+          setIsLoading(false)
+          return
+        }
+
+        if (password.length < 6) {
+          setError("Password must be at least 6 characters.")
+          setIsLoading(false)
+          return
+        }
+        if (password !== formValues.confirmPassword) {
+  setError("Passwords do not match.");
+  setIsLoading(false);
+  return;
+}
+
+
+        const res = await fetch(SIGNUP_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, fullName }),
+        })
+
+        const data = await res.json()
+
+        if (!data.success) {
+          setError(data.message || "Signup failed")
+          setIsLoading(false)
+          return
+        }
+
         localStorage.setItem("mu_auth", "true")
-        router.push("/")
+        localStorage.setItem("mu_email", data.data.email)
+        const name = data.data.fullName || data.data.email.split("@")[0]
+        localStorage.setItem("mu_fullName", name)
+        
+        if (data.data.token) {
+          localStorage.setItem("mu_token", data.data.token)
+        }
+
+        setMessage("Account created successfully! Redirecting...")
+        setTimeout(() => router.push("/"), 600)
         return
       }
-      setError("Incorrect email or password. Please try again.")
+
+      if (mode === "forgot") {
+        setMessage(`If ${email} exists, you will receive reset instructions.`)
+        setIsLoading(false)
+        return
+      }
+
+    } catch (error) {
+      console.error(error)
+      setError("Network Error! Please try again.")
       setIsLoading(false)
-      return
     }
-
-    if (mode === "signup") {
-      const storedUsers = readStoredUsers()
-      if (storedUsers[normalizedEmail]) {
-        setError("This email already has access. Try logging in instead.")
-        setIsLoading(false)
-        return
-      }
-
-      const trimmedFullName = formValues.fullName.trim()
-
-      if (formValues.password.length < 6) {
-        setError("Use at least 6 characters for your password.")
-        setIsLoading(false)
-        return
-      }
-      if (formValues.password !== formValues.confirmPassword) {
-        setError("Passwords do not match.")
-        setIsLoading(false)
-        return
-      }
-      const updatedUsers: StoredUsers = {
-        ...storedUsers,
-        [normalizedEmail]: {
-          fullName: trimmedFullName,
-          password: formValues.password,
-        },
-      }
-      writeStoredUsers(updatedUsers)
-      localStorage.setItem("mu_auth", "true")
-      router.push("/")
-      return
-    }
-
-    const storedUsers = readStoredUsers()
-    const hasAccount = Boolean(storedUsers[normalizedEmail])
-    setMessage(
-      hasAccount
-        ? `We've sent a secure reset link to ${friendlyEmail}. Check your inbox.`
-        : `If an account exists for ${friendlyEmail}, you'll receive reset instructions shortly.`,
-    )
-    setIsLoading(false)
-  }
-
-  const handleGoogleAuth = async () => {
-    if (isLoading) return
-    setError("")
-    setMessage("")
-    setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 350))
-    localStorage.setItem("mu_auth", "true")
-    router.push("/")
   }
 
   const renderEmailField = () => (
@@ -263,7 +452,7 @@ export default function AuthPage() {
         placeholder="name@mastersunion.org"
         className={styles.input}
         autoComplete="email"
-        disabled={isLoading}
+        disabled={isLoading || isGoogleLoading}
         required
       />
     </label>
@@ -299,14 +488,14 @@ export default function AuthPage() {
             placeholder={finalPlaceholder}
             className={`${styles.input} ${styles.passwordInput}`}
             autoComplete={finalAutoComplete}
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading}
             required
           />
           <button
             type="button"
             className={styles.passwordToggle}
             onClick={() => togglePasswordVisibility(field)}
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading}
             aria-label={passwordVisibility[field] ? "Hide password" : "Show password"}
             title={passwordVisibility[field] ? "Hide password" : "Show password"}
           >
@@ -331,7 +520,7 @@ export default function AuthPage() {
         placeholder="Jane Doe"
         className={styles.input}
         autoComplete="name"
-        disabled={isLoading}
+        disabled={isLoading || isGoogleLoading}
         required
       />
     </label>
@@ -362,61 +551,43 @@ export default function AuthPage() {
         <div className={styles.modeSwitch}>
           <button
             type="button"
-            className={`${styles.modeButton} ${
-              mode === "login" ? styles.modeButtonActive : ""
-            }`}
+            className={`${styles.modeButton} ${mode === "login" ? styles.modeButtonActive : ""
+              }`}
             onClick={() => handleModeChange("login")}
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading}
           >
             Login
           </button>
           <button
             type="button"
-            className={`${styles.modeButton} ${
-              mode === "signup" ? styles.modeButtonActive : ""
-            }`}
+            className={`${styles.modeButton} ${mode === "signup" ? styles.modeButtonActive : ""
+              }`}
             onClick={() => handleModeChange("signup")}
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading}
           >
             Sign up
           </button>
         </div>
 
         {showGoogleButton && (
-          <button
-            type="button"
-            className={styles.googleButton}
-            onClick={handleGoogleAuth}
-            disabled={isLoading}
-          >
-            <span className={styles.googleIcon}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <path
-                  d="M21.6 12.2273C21.6 11.5182 21.5364 10.8364 21.4182 10.1818H12V14.05H17.3818C17.15 15.3 16.4455 16.3409 15.3818 17.0591V19.5727H18.6182C20.5091 17.8364 21.6 15.2727 21.6 12.2273Z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M11.9998 22C14.6998 22 16.9635 21.1045 18.618 19.5727L15.3817 17.0591C14.4908 17.6591 13.3453 18.0227 11.9998 18.0227C9.39526 18.0227 7.1908 16.2682 6.39526 13.9091H3.05896V16.4954C4.70444 19.7727 8.0908 22 11.9998 22Z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M6.39545 13.9091C6.19545 13.3091 6.09091 12.6682 6.09091 12C6.09091 11.3318 6.19545 10.6909 6.39545 10.0909V7.50455H3.05909C2.38545 8.85455 2 10.3818 2 12C2 13.6182 2.38545 15.1455 3.05909 16.4955L6.39545 13.9091Z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M11.9998 5.97727C13.4634 5.97727 14.7816 6.48182 15.8361 7.48182L18.6907 4.62727C16.959 3.01818 14.6953 2 11.9998 2C8.0908 2 4.70444 4.22727 3.05994 7.50455L6.39625 10.0909C7.1918 7.73182 9.39626 5.97727 11.9998 5.97727Z"
-                  fill="#EA4335"
-                />
-              </svg>
-            </span>
-            {mode === "signup" ? "Sign up with Google" : "Continue with Google"}
-          </button>
+          <>
+            {/* Custom Google Button */}
+            <button
+              type="button"
+              className={styles.googleButton}
+              onClick={() => window.google.accounts.id.prompt()}
+              disabled={isGoogleLoading}
+            >
+              {isGoogleLoading ? "Connecting..." : (
+                mode === "signup" ? "Sign up with Google" : "Continue with Google"
+              )}
+            </button>
+            
+            {/* Hidden container for Google's button - will be rendered by Google */}
+            <div id="googleSignInContainer" style={{ display: 'none' }}>
+              <div id="googleSignInButton"></div>
+            </div>
+          </>
         )}
 
         {showGoogleButton && (
@@ -478,13 +649,17 @@ export default function AuthPage() {
               type="button"
               className={styles.linkButton}
               onClick={() => handleModeChange(mode === "forgot" ? "login" : "forgot")}
-              disabled={isLoading}
+              disabled={isLoading || isGoogleLoading}
             >
               {mode === "forgot" ? "Back to login" : "Forgot password?"}
             </button>
           </div>
 
-          <button type="submit" className={styles.submitButton} disabled={isSubmitDisabled()}>
+          <button 
+            type="submit" 
+            className={styles.submitButton} 
+            disabled={isSubmitDisabled()}
+          >
             {primaryButtonLabel()}
           </button>
         </form>
@@ -499,4 +674,3 @@ export default function AuthPage() {
     </div>
   )
 }
-
