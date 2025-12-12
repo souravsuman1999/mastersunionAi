@@ -1,0 +1,47 @@
+/* Tetr Theme PromptInput Styles - Separate from Masters Union */
+/* These styles are merged with base styles when Tetr theme is active */
+
+.textarea {
+  background: #ffffff !important;
+  border: 1px solid #E5E5E5 !important;
+  color: #090909 !important;
+  -webkit-text-fill-color: #090909 !important;
+  caret-color: #090909 !important;
+}
+
+.textarea::placeholder {
+  color: #727B6A !important;
+  -webkit-text-fill-color: #727B6A !important;
+}
+
+.textarea:focus {
+  border-color: #004822 !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(0, 72, 34, 0.1) !important;
+  color: #090909 !important;
+  -webkit-text-fill-color: #090909 !important;
+}
+
+.buttonWrapper::before {
+  background: #004822 !important;
+}
+
+.generateButton {
+  background: #004822 !important;
+  color: #ffffff !important;
+  font-family: 'plexSemiBold', sans-serif !important;
+}
+
+.generateButton:hover {
+  background: #003318 !important;
+}
+
+.buttonWrapper:hover:not(.buttonWrapperDisabled) .generateButton,
+.buttonWrapper.active:not(.buttonWrapperDisabled) .generateButton {
+  color: #ffffff !important;
+}
+
+.buttonWrapper:hover:not(.buttonWrapperDisabled) .generateButton svg path,
+.buttonWrapper.active:not(.buttonWrapperDisabled) .generateButton svg path {
+  stroke: #ffffff !important;
+}

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDesignSystemPrompt } from "@/config/design-system"
 
-async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageData?: string): Promise<string> {
+async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageData?: string, theme: "mastersunion" | "tetr" = "mastersunion"): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not set")
@@ -19,7 +19,7 @@ async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageD
     console.warn("[v0] Warning: API key format may be incorrect. Anthropic API keys typically start with 'sk-ant-'")
   }
 
-  const designSystemPrompt = getDesignSystemPrompt()
+  const designSystemPrompt = getDesignSystemPrompt(theme)
   const hasBaseHtml = typeof baseHtml === "string" && baseHtml.trim().length > 0
 
   const systemPrompt = `You are an expert web developer. Generate complete, valid HTML pages based on user requests.
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log("[v0] API route called")
     const body = await request.json()
-    const { prompt, baseHtml, imageData } = body
+    const { prompt, baseHtml, imageData, theme } = body
 
     if (!prompt && !imageData) {
       return NextResponse.json({ error: "Missing prompt or image" }, { status: 400 })
@@ -193,11 +193,12 @@ export async function POST(request: NextRequest) {
     // Log that API key exists (for debugging, without exposing the key)
     console.log("[v0] API key found in environment, length:", apiKey.length)
 
-    console.log("[v0] Generating webpage with prompt:", prompt?.substring(0, 50) + "..." || "[Image only]")
+    const selectedTheme = theme === "tetr" ? "tetr" : "mastersunion"
+    console.log("[v0] Generating webpage with prompt:", prompt?.substring(0, 50) + "..." || "[Image only]", "Theme:", selectedTheme)
     if (imageData) {
       console.log("[v0] Image data provided, length:", imageData.length)
     }
-    const html = await generateWebpageOnServer(prompt || "", baseHtml, imageData)
+    const html = await generateWebpageOnServer(prompt || "", baseHtml, imageData, selectedTheme)
 
     console.log("[v0] Webpage generated successfully")
     return NextResponse.json({ html })

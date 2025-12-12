@@ -2,7 +2,9 @@
 
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
+import { useTheme } from "@/contexts/ThemeContext"
 import styles from "./PromptInput.module.css"
+import tetrStyles from "./PromptInput.tetr.module.css"
 
 interface PromptInputProps {
   onGenerate: (prompt: string, imageData?: string) => void
@@ -23,6 +25,7 @@ export default function PromptInput({
   isReadOnly,
   variant = "hero",
 }: PromptInputProps) {
+  const { theme } = useTheme()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -102,7 +105,7 @@ export default function PromptInput({
           )}
           <textarea
             ref={textareaRef}
-            className={`${styles.textarea} ${isSidebar ? styles.textareaSidebar : ''} ${isHero ? styles.textareaHero : ''} ${imagePreview ? styles.textareaWithImage : ''}`}
+            className={`${styles.textarea} ${theme === "tetr" ? tetrStyles.textarea : ''} ${isSidebar ? styles.textareaSidebar : ''} ${isHero ? styles.textareaHero : ''} ${imagePreview ? styles.textareaWithImage : ''}`}
             value={value}
             onChange={(e) => onPromptChange(e.target.value)}
             placeholder="Describe the page you want to generate... (e.g., 'Create a landing page for a tech startup with hero section, features, and contact form')"
@@ -149,10 +152,10 @@ export default function PromptInput({
         </div>
         {isHero && (
           <div className={styles.buttonContainerHero}>
-            <div className={`${styles.buttonWrapper} ${(isLoading || (!value.trim() && !imageData) || !!isReadOnly) ? styles.buttonWrapperDisabled : ''}`}>
+            <div className={`${styles.buttonWrapper} ${theme === "tetr" ? tetrStyles.buttonWrapper : ''} ${(isLoading || (!value.trim() && !imageData) || !!isReadOnly) ? styles.buttonWrapperDisabled : ''}`}>
               <button
                 type="submit"
-                className={styles.generateButton}
+                className={`${styles.generateButton} ${theme === "tetr" ? tetrStyles.generateButton : ''}`}
                 disabled={isLoading || (!value.trim() && !imageData) || !!isReadOnly}
               >
                 {isLoading ? (

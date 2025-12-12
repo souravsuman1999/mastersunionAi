@@ -4,7 +4,10 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
+import ThemeSelector from "@/components/ThemeSelector"
+import { useTheme } from "@/contexts/ThemeContext"
 import styles from "./page.module.css"
+import tetrStyles from "./page.tetr.module.css"
 
 type PromptVersion = {
   id: string
@@ -32,6 +35,7 @@ const generateVersionId = () => {
 
 export default function Home() {
   const router = useRouter()
+  const { theme } = useTheme()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [generatedHtml, setGeneratedHtml] = useState("")
@@ -81,7 +85,7 @@ export default function Home() {
     setError("")
     setCurrentPrompt(prompt)
 
-    const payload: { prompt: string; baseHtml?: string; imageData?: string } = { prompt }
+    const payload: { prompt: string; baseHtml?: string; imageData?: string; theme?: string } = { prompt, theme }
     // Always use the latest version (first in array) as base for conversation flow
     // This ensures version 2 builds on version 1, version 3 builds on version 2, etc.
     // The selected version only affects display, not the base for new generations
@@ -162,20 +166,28 @@ export default function Home() {
 
   const activeVersionLabel = selectedVersion ? `Version ${selectedVersion.versionNumber}` : undefined
 
+  // Use theme-specific styles
+  const currentStyles = theme === "tetr" ? tetrStyles : styles
+
   if (!hasGenerated) {
     return (
-      <main className={styles.aiGenrate}>
-        <section className={styles.aiGenrateHero}>
-          <div className={styles.container}>
-            <div className={styles.aiGenrateHeroContent}>
-              <div className={styles.mucontentdiv} >
-                <div className={styles.muLogoAnimation}>
-                  <img loading="lazy" src="https://files.mastersunion.link/resources/animateds/logoanimationblack.gif" alt="MU Logo" />
+      <main className={currentStyles.aiGenrate}>
+        <section className={currentStyles.aiGenrateHero}>
+          <div className={currentStyles.container}>
+            <div className={currentStyles.aiGenrateHeroContent}>
+              <ThemeSelector />
+              <div className={currentStyles.mucontentdiv} >
+                <div className={currentStyles.muLogoAnimation}>
+                  {theme === "tetr" ? (
+                    <img loading="lazy" src="https://cdn.tetr.com/assets/ih-images/V2/newTetrLogoBrand.svg" alt="Tetr Logo" />
+                  ) : (
+                    <img loading="lazy" src="https://files.mastersunion.link/resources/animateds/logoanimationblack.gif" alt="MU Logo" />
+                  )}
                 </div>
-                <h1 className={styles.gradientText}> <span> WebStudio </span></h1>
-                <p className={styles.aiGenrateSubtitle}>Transform your ideas into stunning pages with the power of AI</p>
+                <h1 className={currentStyles.gradientText}> <span> WebStudio </span></h1>
+                <p className={currentStyles.aiGenrateSubtitle}>Transform your ideas into stunning pages with the power of AI</p>
               </div>
-              <div className={styles.welcomePromptArea}>
+              <div className={currentStyles.welcomePromptArea}>
                 <PromptInput
                   onGenerate={handleGenerate}
                   isLoading={isLoading}
@@ -187,18 +199,18 @@ export default function Home() {
                 />
               </div>
 
-              <div className={styles.aiGenrateFeatures}>
-                <div className={styles.featureItem}>
-                  <div className={styles.featureIcon}>✨</div>
-                  <p className={styles.featureText}>AI-Powered Generation</p>
+              <div className={currentStyles.aiGenrateFeatures}>
+                <div className={currentStyles.featureItem}>
+                  <div className={currentStyles.featureIcon}>✨</div>
+                  <p className={currentStyles.featureText}>AI-Powered Generation</p>
                 </div>
-                <div className={styles.featureItem}>
-                  <div className={styles.featureIcon}>⚡</div>
-                  <p className={styles.featureText}>Fast & Efficient</p>
+                <div className={currentStyles.featureItem}>
+                  <div className={currentStyles.featureIcon}>⚡</div>
+                  <p className={currentStyles.featureText}>Fast & Efficient</p>
                 </div>
-                <div className={styles.featureItem}>
-                  <div className={styles.featureIcon}>🎨</div>
-                  <p className={styles.featureText}>Beautiful Designs</p>
+                <div className={currentStyles.featureItem}>
+                  <div className={currentStyles.featureIcon}>🎨</div>
+                  <p className={currentStyles.featureText}>Beautiful Designs</p>
                 </div>
               </div>
             </div>
@@ -209,28 +221,28 @@ export default function Home() {
   }
 
   return (
-    <div className={styles.container}>
-      <main className={styles.main}>
-        <section className={styles.promptSection}>
-          <div className={styles.promptSectionInner}>
-            {/* <div className={styles.promptHeader}>
+    <div className={currentStyles.container}>
+      <main className={currentStyles.main}>
+        <section className={currentStyles.promptSection}>
+          <div className={currentStyles.promptSectionInner}>
+            {/* <div className={currentStyles.promptHeader}>
               <div>
-                <p className={styles.promptEyebrow}>Prompt</p>
-                <h2 className={styles.promptTitle}>Describe the page you want to build</h2>
+                <p className={currentStyles.promptEyebrow}>Prompt</p>
+                <h2 className={currentStyles.promptTitle}>Describe the page you want to build</h2>
               </div>
             </div> */}
 
-            <div className={styles.historyHeader}>
+            <div className={currentStyles.historyHeader}>
               <div>
-                <p className={styles.promptEyebrow}>History</p>
-                {/* <h3 className={styles.historyTitle}>Prompt versions</h3> */}
+                <p className={currentStyles.promptEyebrow}>History</p>
+                {/* <h3 className={currentStyles.historyTitle}>Prompt versions</h3> */}
               </div>
-              {selectedVersion && <span className={styles.historyActiveLabel}>Viewing {activeVersionLabel}</span>}
+              {selectedVersion && <span className={currentStyles.historyActiveLabel}>Viewing {activeVersionLabel}</span>}
             </div>
 
-            <div className={styles.historyList}>
+            <div className={currentStyles.historyList}>
               {versions.length === 0 ? (
-                <div className={styles.historyEmpty}>
+                <div className={currentStyles.historyEmpty}>
                   <p>Each prompt you generate will appear here for quick access.</p>
                 </div>
               ) : (
@@ -239,14 +251,14 @@ export default function Home() {
                     type="button"
                     key={version.id}
                     onClick={() => handleVersionSelect(version.id)}
-                    className={`${styles.versionItem} ${selectedVersionId === version.id ? styles.versionItemActive : ""
+                    className={`${currentStyles.versionItem} ${selectedVersionId === version.id ? currentStyles.versionItemActive : ""
                       }`}
                   >
-                    <div className={styles.versionHeader}>
-                      <span className={styles.versionTitle}>Version {version.versionNumber}</span>
-                      <span className={styles.versionTimestamp}>{formatTimestamp(version.createdAt)}</span>
+                    <div className={currentStyles.versionHeader}>
+                      <span className={currentStyles.versionTitle}>Version {version.versionNumber}</span>
+                      <span className={currentStyles.versionTimestamp}>{formatTimestamp(version.createdAt)}</span>
                     </div>
-                    <p className={styles.versionPrompt}>{version.prompt}</p>
+                    <p className={currentStyles.versionPrompt}>{version.prompt}</p>
                   </button>
                 ))
               )}
@@ -264,7 +276,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={styles.previewSection}>
+        <section className={currentStyles.previewSection}>
           <Preview
             html={generatedHtml}
             isLoading={isLoading}

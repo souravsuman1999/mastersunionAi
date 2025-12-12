@@ -1,0 +1,446 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: #fcfdf7;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(252, 253, 247, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #E5E5E5;
+  gap: 16px;
+  justify-content: flex-end;
+}
+
+.titleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.logo {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  font-family: 'Aeonik-bold', sans-serif;
+  color: #004822;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #727B6A;
+  font-family: 'plexMedium', sans-serif;
+}
+
+.versionLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  font-family: 'plexMedium', sans-serif;
+  color: #004822;
+  padding: 4px 8px;
+  background: rgba(0, 72, 34, 0.1);
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.linkToolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(252, 253, 247, 0.95);
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.linkToolbarTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.linkToolbarTitle {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #090909;
+  font-family: 'plexMedium', sans-serif;
+}
+
+.linkToolbarHint {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #727B6A;
+  font-family: 'plexRegular', sans-serif;
+}
+
+.linkToolbarClearSelection {
+  background: transparent;
+  border: 1px solid #E5E5E5;
+  color: #727B6A;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: 'plexMedium', sans-serif;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.linkToolbarClearSelection:hover {
+  color: #004822;
+  border-color: #004822;
+}
+
+.linkToolbarControls {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  align-items: center;
+}
+
+.linkInput {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #E5E5E5;
+  background: rgba(255, 255, 255, 0.8);
+  color: #090909;
+  font-size: 12px;
+  font-family: 'plexMedium', sans-serif;
+}
+
+.linkInput:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.linkInput::placeholder {
+  color: #727B6A;
+}
+
+.applyLinkButton {
+  border: none;
+  border-radius: 8px;
+  background: #004822;
+  color: #ffffff;
+  font-size: 12px;
+  font-family: 'plexMedium', sans-serif;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+}
+
+.applyLinkButton:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(0, 72, 34, 0.35);
+  background: #003318;
+}
+
+.applyLinkButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.removeLinkButton {
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  background: transparent;
+  color: #727B6A;
+  font-size: 12px;
+  font-family: 'plexMedium', sans-serif;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.removeLinkButton:hover:not(:disabled) {
+  color: #004822;
+  border-color: #004822;
+}
+
+.removeLinkButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.linkToolbarMessage {
+  font-size: 11px;
+  font-family: 'plexMedium', sans-serif;
+  color: #727B6A;
+}
+
+.linkToolbarMessage[data-tone="success"] {
+  color: #004822;
+}
+
+.linkToolbarMessage[data-tone="error"] {
+  color: #F8769A;
+}
+
+.editModeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.editButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #004822;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: 'plexMedium', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 72, 34, 0.2);
+}
+
+.editButton:hover:not(:disabled) {
+  background: #003318;
+  box-shadow: 0 4px 16px rgba(0, 72, 34, 0.3);
+}
+
+.editButton:disabled {
+  background: #E5E5E5;
+  color: #727B6A;
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.editButtonActive {
+  background: transparent;
+  color: #004822;
+  border: 1px solid #004822;
+  box-shadow: 0 0 0 1px rgba(0, 72, 34, 0.2);
+}
+
+.editChip {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  border-radius: 999px;
+  padding: 2px 4px 2px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.editChipActive {
+  background: rgba(0, 72, 34, 0.2);
+  color: #004822;
+}
+
+.editStatus {
+  font-size: 12px;
+  color: #727B6A;
+  font-family: 'plexMedium', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.editStatusActive {
+  color: #004822;
+}
+
+.secondaryButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: transparent;
+  color: #090909;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'plexMedium', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondaryButton:hover:not(:disabled) {
+  border-color: #004822;
+  color: #004822;
+}
+
+.secondaryButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.previewWrapper {
+  flex: 1;
+  background: #fcfdf7;
+  overflow: auto;
+  min-height: 0;
+  position: relative;
+}
+
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  background: #fcfdf7;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 60px 40px;
+  text-align: center;
+  background: linear-gradient(135deg, #fafcf3 0%, #fcfdf7 100%);
+}
+
+.placeholderIcon {
+  margin-bottom: 24px;
+  color: #004822;
+  opacity: 0.8;
+}
+
+.placeholderTitle {
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: 700;
+  font-family: 'Aeonik-bold', sans-serif;
+  color: #090909;
+  letter-spacing: -0.5px;
+}
+
+.placeholderText {
+  margin: 0;
+  font-size: 16px;
+  color: #727B6A;
+  font-family: 'plexRegular', sans-serif;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: linear-gradient(135deg, #fafcf3 0%, #fcfdf7 100%);
+}
+
+.lottieContainer {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 24px;
+}
+
+.spinner {
+  margin-bottom: 24px;
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.spinnerCircle {
+  position: absolute;
+  inset: 0;
+  border: 4px solid #E5E5E5;
+  border-top-color: #004822;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingText {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'plexSemiBold', sans-serif;
+  color: #090909;
+}
+
+.loadingSubtext {
+  margin: 0;
+  font-size: 14px;
+  color: #727B6A;
+  font-family: 'plexRegular', sans-serif;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .logo {
+    font-size: 20px;
+  }
+
+  .headerActions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .editModeGroup {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .editButton,
+  .secondaryButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .linkToolbarTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .linkToolbarControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .applyLinkButton,
+  .removeLinkButton {
+    width: 100%;
+  }
+
+  .editStatus {
+    text-align: left;
+  }
+}
+

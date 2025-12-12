@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback, ChangeEvent } from "react"
 import dynamic from "next/dynamic"
+import { useTheme } from "@/contexts/ThemeContext"
 import styles from "./Preview.module.css"
+import tetrStyles from "./Preview.tetr.module.css"
 
 const DotLottieReact = dynamic(() => import("@lottiefiles/dotlottie-react").then((mod) => mod.DotLottieReact), {
   ssr: false,
@@ -261,7 +263,7 @@ const setupPlayButtonHandlers = (doc: Document) => {
   })
 }
 
-const injectBaseStyles = (doc: Document) => {
+const injectBaseStyles = (doc: Document, theme: "mastersunion" | "tetr" = "mastersunion") => {
   if (!doc.head) {
     console.warn("[Preview] Document head is not available yet")
     return
@@ -270,6 +272,21 @@ const injectBaseStyles = (doc: Document) => {
   if (doc.getElementById(EDIT_STYLE_ID)) {
     return
   }
+
+  const isTetr = theme === "tetr"
+  
+  // Tetr theme uses green (#004822) for edit mode, Masters Union uses yellow/orange
+  const editColor = isTetr ? "rgba(0, 72, 34, 0.96)" : "rgba(250, 209, 51, 0.96)"
+  const editColorHover = isTetr ? "rgba(0, 72, 34, 0.85)" : "rgba(250, 209, 51, 0.85)"
+  const editColorShadow = isTetr ? "rgba(0, 72, 34, 0.25)" : "rgba(250, 209, 51, 0.25)"
+  const editColorShadowHover = isTetr ? "rgba(0, 72, 34, 0.2)" : "rgba(250, 209, 51, 0.2)"
+  const editSelectionBg = isTetr ? "rgba(0, 72, 34, 0.35)" : "rgba(250, 209, 51, 0.35)"
+  const caretColor = isTetr ? "#004822" : "#050505"
+  const linkColor = isTetr ? "rgba(0, 72, 34, 0.95)" : "rgba(86, 149, 255, 0.95)"
+  const linkColorShadow = isTetr ? "rgba(0, 72, 34, 0.3)" : "rgba(86, 149, 255, 0.3)"
+  const videoColor = isTetr ? "rgba(0, 72, 34, 0.95)" : "rgba(250, 209, 51, 0.95)"
+  const videoColorShadow = isTetr ? "rgba(0, 72, 34, 0.3)" : "rgba(250, 209, 51, 0.3)"
+  const iframeHeroBg = isTetr ? "var(--white-2, #fcfdf7)" : "var(--black, #000)"
 
   const style = doc.createElement("style")
   style.id = EDIT_STYLE_ID
@@ -288,18 +305,18 @@ const injectBaseStyles = (doc: Document) => {
         cursor: text !important;
       }
       body[data-mu-edit-mode="true"] {
-        caret-color: #050505;
+        caret-color: ${caretColor};
       }
       body[data-mu-edit-mode="true"] ::selection {
-        background: rgba(250, 209, 51, 0.35);
+        background: ${editSelectionBg};
       }
       body[data-mu-edit-mode="true"] [${EDITABLE_ATTRIBUTE}] {
         position: relative;
         transition: outline 0.15s ease, box-shadow 0.15s ease;
       }
       body[data-mu-edit-mode="true"] [${EDITABLE_ATTRIBUTE}]:hover {
-        outline: 1px dashed rgba(250, 209, 51, 0.85);
-        box-shadow: 0 0 0 2px rgba(250, 209, 51, 0.2);
+        outline: 1px dashed ${editColorHover};
+        box-shadow: 0 0 0 2px ${editColorShadowHover};
       }
       body[data-mu-edit-mode="true"] [${EDITABLE_ATTRIBUTE}]:hover::after {
         content: "Edit text";
@@ -311,23 +328,23 @@ const injectBaseStyles = (doc: Document) => {
         text-transform: uppercase;
         padding: 2px 8px;
         border-radius: 999px;
-        background: rgba(250, 209, 51, 0.96);
-        color: #050505;
+        background: ${editColor};
+        color: ${isTetr ? "#ffffff" : "#050505"};
         font-family: "Inter", "Segoe UI", sans-serif;
         box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
         pointer-events: none;
       }
       body[data-mu-edit-mode="true"] [${EDITABLE_ATTRIBUTE}]:focus {
-        outline: 1px solid rgba(250, 209, 51, 1);
-        box-shadow: 0 0 0 3px rgba(250, 209, 51, 0.25);
+        outline: 1px solid ${editColor};
+        box-shadow: 0 0 0 3px ${editColorShadow};
       }
       body[data-mu-edit-mode="true"] [${LINK_TARGET_ATTRIBUTE}="true"] {
-        outline: 2px solid rgba(86, 149, 255, 0.95) !important;
-        box-shadow: 0 0 0 3px rgba(86, 149, 255, 0.3) !important;
+        outline: 2px solid ${linkColor} !important;
+        box-shadow: 0 0 0 3px ${linkColorShadow} !important;
       }
       body[data-mu-edit-mode="true"] [${VIDEO_TARGET_ATTRIBUTE}="true"] {
-        outline: 2px solid rgba(250, 209, 51, 0.95) !important;
-        box-shadow: 0 0 0 3px rgba(250, 209, 51, 0.3) !important;
+        outline: 2px solid ${videoColor} !important;
+        box-shadow: 0 0 0 3px ${videoColorShadow} !important;
       }
       .popup {
         position: fixed;
@@ -374,7 +391,7 @@ const injectBaseStyles = (doc: Document) => {
       .iframeHero {
         width: inherit;
         height: inherit;
-        background: var(--black, #000);
+        background: ${iframeHeroBg};
       }
       .custom-video-area {
         position: relative;
@@ -496,10 +513,12 @@ const applyBoldFormatting = (doc: Document) => {
 }
 
 export default function Preview({ html, isLoading, activeVersionLabel, onHtmlChange, onEditModeChange }: PreviewProps) {
+  const { theme } = useTheme()
   const [displayHtml, setDisplayHtml] = useState(html)
   const [isEditMode, setIsEditMode] = useState(false)
   const [iframeReady, setIframeReady] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const currentStyles = theme === "tetr" ? tetrStyles : styles
   const skipNextHtmlSync = useRef(false)
   const persistEditedHtmlRef = useRef<() => string | null>(() => null)
   const [linkEditorTarget, setLinkEditorTarget] = useState<{ element: HTMLElement; tag: LinkableTag } | null>(null)
@@ -785,7 +804,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       try {
         const iframeDoc = getIframeDocument(iframe)
         if (iframeDoc && iframeDoc.head && iframeDoc.body) {
-          injectBaseStyles(iframeDoc)
+          injectBaseStyles(iframeDoc, theme)
           injectVideoPopup(iframeDoc)
           setTimeout(() => {
             setupPlayButtonHandlers(iframeDoc)
@@ -796,7 +815,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
           setTimeout(() => {
             const retryDoc = getIframeDocument(iframe)
             if (retryDoc && retryDoc.head && retryDoc.body) {
-              injectBaseStyles(retryDoc)
+              injectBaseStyles(retryDoc, theme)
               injectVideoPopup(retryDoc)
               setTimeout(() => {
                 setupPlayButtonHandlers(retryDoc)
@@ -834,7 +853,26 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       iframe.removeEventListener("load", handleLoad)
       clearInterval(intervalId)
     }
-  }, [displayHtml])
+  }, [displayHtml, theme])
+
+  // Re-inject styles when theme changes
+  useEffect(() => {
+    const iframe = iframeRef.current
+    if (!iframe || !iframeReady) {
+      return
+    }
+
+    const doc = getIframeDocument(iframe)
+    if (doc && doc.head) {
+      // Remove old style if it exists
+      const oldStyle = doc.getElementById(EDIT_STYLE_ID)
+      if (oldStyle) {
+        oldStyle.remove()
+      }
+      // Inject new styles with current theme
+      injectBaseStyles(doc, theme)
+    }
+  }, [theme, iframeReady])
 
   useEffect(() => {
     if (!isEditMode) {
@@ -1331,14 +1369,14 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        {/* <div className={styles.titleSection}>
-          {activeVersionLabel && <span className={styles.versionLabel}>{activeVersionLabel}</span>}
+    <div className={currentStyles.container}>
+      <div className={currentStyles.header}>
+        {/* <div className={currentStyles.titleSection}>
+          {activeVersionLabel && <span className={currentStyles.versionLabel}>{activeVersionLabel}</span>}
         </div> */}
-        <div className={styles.headerActions}>
+        <div className={currentStyles.headerActions}>
           <button
-            className={styles.secondaryButton}
+            className={currentStyles.secondaryButton}
             onClick={handleCopyCode}
             disabled={!displayHtml || isLoading}
             type="button"
@@ -1361,7 +1399,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
             )}
           </button>
           <button
-            className={styles.secondaryButton}
+            className={currentStyles.secondaryButton}
             onClick={handleViewFullPage}
             disabled={!displayHtml || isLoading}
             type="button"
@@ -1374,9 +1412,9 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
             </svg>
             View full page
           </button>
-          <div className={styles.editModeGroup}>
+          <div className={currentStyles.editModeGroup}>
             <button
-              className={`${styles.editButton} ${isEditMode ? styles.editButtonActive : ""}`}
+              className={`${currentStyles.editButton} ${isEditMode ? currentStyles.editButtonActive : ""}`}
               onClick={handleToggleEditMode}
               disabled={!displayHtml || isLoading || !iframeReady}
               type="button"
@@ -1386,11 +1424,11 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
               </svg>
               Edit mode
-              <span className={`${styles.editChip} ${isEditMode ? styles.editChipActive : ""}`}>
+              <span className={`${currentStyles.editChip} ${isEditMode ? currentStyles.editChipActive : ""}`}>
                 {isEditMode ? "ON" : "OFF"}
               </span>
             </button>
-            {/* <span className={`${styles.editStatus} ${isEditMode ? styles.editStatusActive : ""}`}>
+            {/* <span className={`${currentStyles.editStatus} ${isEditMode ? currentStyles.editStatusActive : ""}`}>
               {isEditMode ? "Editing in preview" : "Preview locked"}
             </span> */}
           </div>
@@ -1399,18 +1437,18 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       {isEditMode && (
         <>
           {linkEditorTarget && (
-            <div className={styles.linkToolbar}>
-              <div className={styles.linkToolbarControls}>
+            <div className={currentStyles.linkToolbar}>
+              <div className={currentStyles.linkToolbarControls}>
                 <input
                   type="text"
-                  className={styles.linkInput}
+                  className={currentStyles.linkInput}
                   placeholder="https://example.com or /contact"
                   value={linkEditorValue}
                   onChange={handleLinkInputChange}
                   disabled={!linkEditorTarget}
                 />
                 <button
-                  className={styles.applyLinkButton}
+                  className={currentStyles.applyLinkButton}
                   onClick={handleApplyLink}
                   type="button"
                   disabled={!linkEditorTarget || !linkEditorValue.trim()}
@@ -1418,7 +1456,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                   Save link
                 </button>
                 <button
-                  className={styles.removeLinkButton}
+                  className={currentStyles.removeLinkButton}
                   onClick={handleRemoveLink}
                   type="button"
                   disabled={!linkEditorTarget}
@@ -1427,31 +1465,31 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                 </button>
               </div>
               {linkEditorMessage && (
-                <span className={styles.linkToolbarMessage} data-tone={linkEditorTone} aria-live="polite">
+                <span className={currentStyles.linkToolbarMessage} data-tone={linkEditorTone} aria-live="polite">
                   {linkEditorMessage}
                 </span>
               )}
             </div>
           )}
           {videoEditorTarget && (
-            <div className={styles.linkToolbar}>
-              <div className={styles.linkToolbarTop}>
+            <div className={currentStyles.linkToolbar}>
+              <div className={currentStyles.linkToolbarTop}>
                 <div>
-                  <h3 className={styles.linkToolbarTitle}>Edit Video Links</h3>
-                  <p className={styles.linkToolbarHint}>Enter YouTube URL, CDN video URL, or regular navigation link</p>
+                  <h3 className={currentStyles.linkToolbarTitle}>Edit Video Links</h3>
+                  <p className={currentStyles.linkToolbarHint}>Enter YouTube URL, CDN video URL, or regular navigation link</p>
                 </div>
                 <button
-                  className={styles.linkToolbarClearSelection}
+                  className={currentStyles.linkToolbarClearSelection}
                   onClick={() => updateVideoEditorSelection(null)}
                   type="button"
                 >
                   Clear selection
                 </button>
               </div>
-              <div className={styles.linkToolbarControls}>
+              <div className={currentStyles.linkToolbarControls}>
                 <input
                   type="text"
-                  className={styles.linkInput}
+                  className={currentStyles.linkInput}
                   placeholder="YouTube URL (e.g., https://youtube.com/watch?v=...) or Video ID"
                   value={videoEditorYoutube}
                   onChange={handleVideoYoutubeChange}
@@ -1459,7 +1497,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                 />
                 <input
                   type="text"
-                  className={styles.linkInput}
+                  className={currentStyles.linkInput}
                   placeholder="CDN Video URL (e.g., https://example.com/video.mp4)"
                   value={videoEditorCdn}
                   onChange={handleVideoCdnChange}
@@ -1467,14 +1505,14 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                 />
                 <input
                   type="text"
-                  className={styles.linkInput}
+                  className={currentStyles.linkInput}
                   placeholder="Regular Link (e.g., https://example.com or /contact)"
                   value={videoEditorLink}
                   onChange={handleVideoLinkChange}
                   disabled={!videoEditorTarget}
                 />
                 <button
-                  className={styles.applyLinkButton}
+                  className={currentStyles.applyLinkButton}
                   onClick={handleApplyVideo}
                   type="button"
                   disabled={!videoEditorTarget || (!videoEditorYoutube.trim() && !videoEditorCdn.trim() && !videoEditorLink.trim())}
@@ -1482,7 +1520,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                   Save
                 </button>
                 <button
-                  className={styles.removeLinkButton}
+                  className={currentStyles.removeLinkButton}
                   onClick={handleRemoveVideo}
                   type="button"
                   disabled={!videoEditorTarget}
@@ -1490,7 +1528,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                   Remove video
                 </button>
                 <button
-                  className={styles.removeLinkButton}
+                  className={currentStyles.removeLinkButton}
                   onClick={handleRemoveVideoLink}
                   type="button"
                   disabled={!videoEditorTarget || !videoEditorLink.trim()}
@@ -1499,7 +1537,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                 </button>
               </div>
               {videoEditorMessage && (
-                <span className={styles.linkToolbarMessage} data-tone={videoEditorTone} aria-live="polite">
+                <span className={currentStyles.linkToolbarMessage} data-tone={videoEditorTone} aria-live="polite">
                   {videoEditorMessage}
                 </span>
               )}
@@ -1507,38 +1545,38 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
           )}
         </>
       )}
-      <div className={styles.previewWrapper}>
+      <div className={currentStyles.previewWrapper}>
         {isLoading ? (
-          <div className={styles.loadingState}>
-            <div className={styles.lottieContainer}>
+          <div className={currentStyles.loadingState}>
+            <div className={currentStyles.lottieContainer}>
               <DotLottieReact
                 src="https://lottie.host/ab1b22d0-c21f-4d40-8c4c-dbe60b73e693/s6xFHKHmVn.lottie"
                 loop
                 autoplay
               />
             </div>
-            <p className={styles.loadingText}>Generating your webpage...</p>
-            <p className={styles.loadingSubtext}>Mu AI is crafting something amazing</p>
+            <p className={currentStyles.loadingText}>Generating your webpage...</p>
+            <p className={currentStyles.loadingSubtext}>Mu AI is crafting something amazing</p>
           </div>
         ) : displayHtml ? (
           <iframe
             ref={iframeRef}
-            className={styles.iframe}
+            className={currentStyles.iframe}
             srcDoc={displayHtml}
             sandbox="allow-scripts allow-same-origin"
             title="Generated Webpage Preview"
           />
         ) : (
-          <div className={styles.placeholder}>
-            <div className={styles.placeholderIcon}>
+          <div className={currentStyles.placeholder}>
+            <div className={currentStyles.placeholderIcon}>
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <line x1="9" y1="9" x2="15" y2="9" />
                 <line x1="9" y1="15" x2="15" y2="15" />
               </svg>
             </div>
-            <h2 className={styles.placeholderTitle}>Ready to Create</h2>
-            <p className={styles.placeholderText}>Describe your vision below and watch it come to life</p>
+            <h2 className={currentStyles.placeholderTitle}>Ready to Create</h2>
+            <p className={currentStyles.placeholderText}>Describe your vision below and watch it come to life</p>
           </div>
         )}
       </div>
