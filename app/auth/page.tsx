@@ -83,8 +83,8 @@ export default function AuthPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const router = useRouter()
 
-  const SIGNUP_API = "http://localhost:32000/api/registerAIUser"
-  const LOGIN_API = "http://localhost:32000/api/loginAIUser"
+  const SIGNUP_API = "https://api.mastersunion.org/api/registerAIUser"
+  const LOGIN_API = "https://api.mastersunion.org/api/loginAIUser"
   const GOOGLE_CLIENT_ID = "512709816866-vh5vpmcvll1l6qamudif1kceqq72059c.apps.googleusercontent.com"
 
   // Check if authenticated
@@ -404,7 +404,13 @@ function persistAndRedirect(data: any) {
         const res = await fetch(SIGNUP_API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, fullName }),
+          body: JSON.stringify({
+            email,
+            password,
+            confirmPassword: formValues.confirmPassword, 
+            fullName,
+            isGoogle: false
+          }),
         })
 
         const data = await res.json()
