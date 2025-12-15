@@ -38,6 +38,16 @@ IMPORTANT RULES:
 - For carousels/sliders, use Swiper.js with the provided Swiper classes and styling
 - For video play buttons, ALWAYS include the Video Popup System HTML structure and JavaScript functions (see Video Popup System section). Use data-video-youtube or data-video-cdn attributes on play buttons to enable video playback in the popup.
 - For play button icons, ALWAYS use this image: https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg - DO NOT use SVG code or other play icons.
+- MASTERS SECTIONS (COMPULSORY RULES):
+  - If a section displays "masters" (program masters, faculty masters, etc.) with categories:
+    * MUST display as tabs with category names as tab labels
+    * Each tab should show masters from that category
+    * Use clean tab navigation with smooth transitions
+  - If a section displays "masters" WITHOUT categories:
+    * MUST display as an infinite marquee/scrolling animation
+    * The marquee should scroll smoothly and continuously
+    * Masters should be displayed in a horizontal scrolling layout
+  - This behavior is MANDATORY for all masters sections - you MUST implement either tabs (with categories) or infinite marquee (without categories)
 
 /* ============================================
    MASTERS' UNION COLOR TOKENS
@@ -365,7 +375,7 @@ section{
 .heroSectionContent {
   position: relative;
   z-index: 2;
-  max-width: 1280px;
+  max-width: 60%;
   margin: 0 auto;
   padding: 0 20px;
   width: 100%;
@@ -420,6 +430,7 @@ section{
   
   .heroSectionContent {
     padding: 0 16px;
+    max-width: 100%;
   }
   
   .heroSectionTwoCol {
@@ -1804,6 +1815,184 @@ When selecting background images (for single-column heroes only):
 - Ensure the image URL is publicly accessible
 - The image should complement the hero content and maintain readability with the overlay
 - Use descriptive, contextually appropriate image URLs that match the topic
+*/
+
+/* ============================================
+   MASTERS SECTIONS (COMPULSORY)
+   ============================================ */
+/*
+MASTERS SECTIONS - MANDATORY RULES:
+
+1. IF MASTERS HAVE CATEGORIES:
+   - MUST display as tabs with category names as tab labels
+   - Each tab shows masters from that category
+   - Use smooth tab transitions
+   - Example structure:
+     <section class="mastersSection">
+       <div class="container">
+         <h2 class="go-BreatherHeading">Our Masters</h2>
+         <div class="mastersTabs">
+           <button class="mastersTab active" data-category="business">Business</button>
+           <button class="mastersTab" data-category="technology">Technology</button>
+           <button class="mastersTab" data-category="design">Design</button>
+         </div>
+         <div class="mastersTabContent">
+           <div class="mastersTabPanel active" data-category="business">
+             <!-- Masters cards for business category -->
+           </div>
+           <div class="mastersTabPanel" data-category="technology">
+             <!-- Masters cards for technology category -->
+           </div>
+           <div class="mastersTabPanel" data-category="design">
+             <!-- Masters cards for design category -->
+           </div>
+         </div>
+       </div>
+     </section>
+
+2. IF MASTERS HAVE NO CATEGORIES:
+   - MUST display as infinite marquee/scrolling animation
+   - Smooth, continuous horizontal scrolling
+   - Masters displayed in horizontal layout
+   - Example structure:
+     <section class="mastersSection">
+       <div class="container">
+         <h2 class="go-BreatherHeading">Our Masters</h2>
+         <div class="mastersMarquee">
+           <div class="mastersMarqueeTrack">
+             <!-- Duplicate masters for seamless loop -->
+             <div class="mastersMarqueeItem">Master 1</div>
+             <div class="mastersMarqueeItem">Master 2</div>
+             <div class="mastersMarqueeItem">Master 3</div>
+             <!-- Duplicate for seamless loop -->
+             <div class="mastersMarqueeItem">Master 1</div>
+             <div class="mastersMarqueeItem">Master 2</div>
+             <div class="mastersMarqueeItem">Master 3</div>
+           </div>
+         </div>
+       </div>
+     </section>
+
+CSS FOR MASTERS TABS (when categories exist):
+.mastersTabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--grey3);
+  flex-wrap: wrap;
+}
+
+.mastersTab {
+  background: transparent;
+  border: none;
+  padding: 12px 24px;
+  font: normal 16px/1.4 "go-medium";
+  color: var(--grey);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  top: 1px;
+}
+
+.mastersTab:hover {
+  color: var(--white);
+}
+
+.mastersTab.active {
+  color: var(--white);
+  border-bottom-color: var(--newYellow);
+}
+
+.mastersTabContent {
+  position: relative;
+  min-height: 400px;
+}
+
+.mastersTabPanel {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.mastersTabPanel.active {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+CSS FOR MASTERS MARQUEE (when no categories):
+.mastersMarquee {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  padding: 40px 0;
+}
+
+.mastersMarqueeTrack {
+  display: flex;
+  gap: 24px;
+  animation: marqueeScroll 30s linear infinite;
+  will-change: transform;
+}
+
+.mastersMarqueeTrack:hover {
+  animation-play-state: paused;
+}
+
+.mastersMarqueeItem {
+  flex: 0 0 auto;
+  min-width: 280px;
+  background: var(--black2);
+  border: 1px solid var(--grey3);
+  border-radius: 8px;
+  padding: 24px;
+  transition: transform 0.3s ease;
+}
+
+.mastersMarqueeItem:hover {
+  transform: translateY(-4px);
+  border-color: var(--newYellow);
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+JavaScript for Masters Tabs:
+document.addEventListener('DOMContentLoaded', function() {
+  const tabs = document.querySelectorAll('.mastersTab');
+  const panels = document.querySelectorAll('.mastersTabPanel');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      const category = this.getAttribute('data-category');
+      
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Update active panel
+      panels.forEach(panel => {
+        panel.classList.remove('active');
+        if (panel.getAttribute('data-category') === category) {
+          panel.classList.add('active');
+        }
+      });
+    });
+  });
+});
+
+IMPORTANT: You MUST implement either tabs (with categories) or infinite marquee (without categories) for ALL masters sections. There is no alternative - this is mandatory.
 */
   `;
 }

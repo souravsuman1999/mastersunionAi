@@ -40,6 +40,7 @@ const BUTTON_LINK_ATTRIBUTE = "data-mu-button-link"
 const VIDEO_TARGET_ATTRIBUTE = "data-mu-video-target"
 const VIDEO_YOUTUBE_ATTRIBUTE = "data-video-youtube"
 const VIDEO_CDN_ATTRIBUTE = "data-video-cdn"
+const IMAGE_TARGET_ATTRIBUTE = "data-mu-image-target"
 type LinkableTag = "a" | "button"
 
 const sanitizeLinkUrl = (rawValue: string) => {
@@ -329,6 +330,81 @@ const injectBaseStyles = (doc: Document) => {
         outline: 2px solid rgba(250, 209, 51, 0.95) !important;
         box-shadow: 0 0 0 3px rgba(250, 209, 51, 0.3) !important;
       }
+      body[data-mu-edit-mode="true"] [${IMAGE_TARGET_ATTRIBUTE}="true"] {
+        outline: 2px solid rgba(86, 149, 255, 0.95) !important;
+        box-shadow: 0 0 0 3px rgba(86, 149, 255, 0.3) !important;
+        cursor: pointer !important;
+      }
+      body[data-mu-edit-mode="true"] [${IMAGE_TARGET_ATTRIBUTE}="true"]:hover::after {
+        content: "Click to change image";
+        position: absolute;
+        top: -22px;
+        right: -4px;
+        font-size: 10px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(86, 149, 255, 0.96);
+        color: #ffffff;
+        font-family: "Inter", "Segoe UI", sans-serif;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        pointer-events: none;
+        z-index: 10000;
+      }
+      body[data-mu-edit-mode="true"] img {
+        position: relative;
+        transition: all 0.2s ease;
+        cursor: pointer !important;
+      }
+      body[data-mu-edit-mode="true"] img:hover:not([${IMAGE_TARGET_ATTRIBUTE}]) {
+        outline: 2px dashed rgba(86, 149, 255, 0.7) !important;
+        box-shadow: 0 0 0 3px rgba(86, 149, 255, 0.2) !important;
+        opacity: 0.85;
+        filter: brightness(1.1);
+      }
+      body[data-mu-edit-mode="true"] img[${IMAGE_TARGET_ATTRIBUTE}]:hover {
+        outline: 2px solid rgba(86, 149, 255, 1) !important;
+        box-shadow: 0 0 0 4px rgba(86, 149, 255, 0.4) !important;
+        opacity: 0.9;
+        filter: brightness(1.15);
+      }
+      body[data-mu-edit-mode="true"] button[${VIDEO_YOUTUBE_ATTRIBUTE}],
+      body[data-mu-edit-mode="true"] button[${VIDEO_CDN_ATTRIBUTE}],
+      body[data-mu-edit-mode="true"] [${VIDEO_YOUTUBE_ATTRIBUTE}],
+      body[data-mu-edit-mode="true"] [${VIDEO_CDN_ATTRIBUTE}] {
+        position: relative;
+        transition: all 0.2s ease;
+      }
+      body[data-mu-edit-mode="true"] button[${VIDEO_YOUTUBE_ATTRIBUTE}]:hover,
+      body[data-mu-edit-mode="true"] button[${VIDEO_CDN_ATTRIBUTE}]:hover,
+      body[data-mu-edit-mode="true"] [${VIDEO_YOUTUBE_ATTRIBUTE}]:hover,
+      body[data-mu-edit-mode="true"] [${VIDEO_CDN_ATTRIBUTE}]:hover {
+        outline: 2px dashed rgba(250, 209, 51, 0.7) !important;
+        box-shadow: 0 0 0 3px rgba(250, 209, 51, 0.2) !important;
+        transform: scale(1.05);
+      }
+      body[data-mu-edit-mode="true"] button[${VIDEO_YOUTUBE_ATTRIBUTE}]:hover::after,
+      body[data-mu-edit-mode="true"] button[${VIDEO_CDN_ATTRIBUTE}]:hover::after,
+      body[data-mu-edit-mode="true"] [${VIDEO_YOUTUBE_ATTRIBUTE}]:hover::after,
+      body[data-mu-edit-mode="true"] [${VIDEO_CDN_ATTRIBUTE}]:hover::after {
+        content: "Click to edit video";
+        position: absolute;
+        top: -22px;
+        right: -4px;
+        font-size: 10px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(250, 209, 51, 0.96);
+        color: #050505;
+        font-family: "Inter", "Segoe UI", sans-serif;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        pointer-events: none;
+        z-index: 10000;
+        white-space: nowrap;
+      }
       .popup {
         position: fixed;
         z-index: 99999;
@@ -518,6 +594,13 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   const highlightedVideoRef = useRef<HTMLElement | null>(null)
   const videoMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [imageEditorTarget, setImageEditorTarget] = useState<HTMLImageElement | null>(null)
+  const [imageEditorMessage, setImageEditorMessage] = useState("")
+  const [imageEditorTone, setImageEditorTone] = useState<"info" | "success" | "error">("info")
+  const highlightedImageRef = useRef<HTMLImageElement | null>(null)
+  const imageMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const imageFileInputRef = useRef<HTMLInputElement | null>(null)
+
   const clearHighlightedLink = useCallback(() => {
     if (highlightedLinkRef.current) {
       highlightedLinkRef.current.removeAttribute(LINK_TARGET_ATTRIBUTE)
@@ -532,6 +615,13 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
   }, [])
 
+  const clearHighlightedImage = useCallback(() => {
+    if (highlightedImageRef.current) {
+      highlightedImageRef.current.removeAttribute(IMAGE_TARGET_ATTRIBUTE)
+      highlightedImageRef.current = null
+    }
+  }, [])
+
   const resetLinkMessageTimer = useCallback(() => {
     if (linkMessageTimeoutRef.current) {
       clearTimeout(linkMessageTimeoutRef.current)
@@ -543,6 +633,13 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     if (videoMessageTimeoutRef.current) {
       clearTimeout(videoMessageTimeoutRef.current)
       videoMessageTimeoutRef.current = null
+    }
+  }, [])
+
+  const resetImageMessageTimer = useCallback(() => {
+    if (imageMessageTimeoutRef.current) {
+      clearTimeout(imageMessageTimeoutRef.current)
+      imageMessageTimeoutRef.current = null
     }
   }, [])
 
@@ -568,6 +665,18 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       }, 2200)
     },
     [resetVideoMessageTimer]
+  )
+
+  const showImageMessage = useCallback(
+    (message: string, tone: "info" | "success" | "error" = "info") => {
+      resetImageMessageTimer()
+      setImageEditorTone(tone)
+      setImageEditorMessage(message)
+      imageMessageTimeoutRef.current = setTimeout(() => {
+        setImageEditorMessage("")
+      }, 2200)
+    },
+    [resetImageMessageTimer]
   )
 
   const updateLinkEditorSelection = useCallback(
@@ -683,6 +792,61 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     return videoEditorTarget
   }, [videoEditorTarget, updateVideoEditorSelection])
 
+  const updateImageEditorSelection = useCallback(
+    (element: HTMLImageElement | null) => {
+      resetImageMessageTimer()
+      setImageEditorMessage("")
+      setImageEditorTone("info")
+
+      if (!element) {
+        clearHighlightedImage()
+        setImageEditorTarget(null)
+        return
+      }
+
+      const doc = getIframeDocument(iframeRef.current)
+      if (!doc || !doc.body || !doc.body.contains(element)) {
+        clearHighlightedImage()
+        setImageEditorTarget(null)
+        return
+      }
+
+      // Clear previous selection
+      clearHighlightedImage()
+      
+      // Set new selection
+      element.setAttribute(IMAGE_TARGET_ATTRIBUTE, "true")
+      highlightedImageRef.current = element
+      setImageEditorTarget(element)
+      
+      // Ensure the element is still in the DOM after update
+      // This helps maintain selection even after image src changes
+      const checkElement = () => {
+        if (doc.body.contains(element)) {
+          element.setAttribute(IMAGE_TARGET_ATTRIBUTE, "true")
+        }
+      }
+      
+      // Re-apply attribute after a brief delay to ensure it persists
+      setTimeout(checkElement, 10)
+    },
+    [clearHighlightedImage, resetImageMessageTimer]
+  )
+
+  const getResolvedImageTarget = useCallback(() => {
+    if (!imageEditorTarget) {
+      return null
+    }
+
+    const doc = getIframeDocument(iframeRef.current)
+    if (!doc || !doc.body || !doc.body.contains(imageEditorTarget)) {
+      updateImageEditorSelection(null)
+      return null
+    }
+
+    return imageEditorTarget
+  }, [imageEditorTarget, updateImageEditorSelection])
+
   const readIframeHtml = useCallback(() => {
     const doc = getIframeDocument(iframeRef.current)
     if (!doc || !doc.documentElement) {
@@ -697,6 +861,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     htmlClone.querySelectorAll(`[${EDITABLE_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(EDITABLE_ATTRIBUTE))
     htmlClone.querySelectorAll(`[${LINK_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(LINK_TARGET_ATTRIBUTE))
     htmlClone.querySelectorAll(`[${VIDEO_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(VIDEO_TARGET_ATTRIBUTE))
+    htmlClone.querySelectorAll(`[${IMAGE_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(IMAGE_TARGET_ATTRIBUTE))
     // Remove popup from cloned HTML
     htmlClone.querySelectorAll("#heroPopup").forEach((node) => node.remove())
     bodyClone?.removeAttribute("contenteditable")
@@ -707,13 +872,29 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   }, [])
 
   const persistEditedHtml = useCallback(() => {
+    const iframe = iframeRef.current
+    const iframeWindow = getIframeWindow(iframe)
+    
+    // Save scroll position before updating
+    let scrollX = 0
+    let scrollY = 0
+    if (iframeWindow) {
+      scrollX = iframeWindow.scrollX || iframeWindow.pageXOffset || 0
+      scrollY = iframeWindow.scrollY || iframeWindow.pageYOffset || 0
+    }
+
     const updated = readIframeHtml()
     if (!updated) {
       return null
     }
 
-    if (updated !== displayHtml) {
-      setDisplayHtml(updated)
+    // CRITICAL: Don't update displayHtml while in edit mode as it causes iframe reload
+    // Only update the parent component's HTML state, not the iframe srcDoc
+    // This prevents the iframe from reloading and losing edit mode
+    if (!isEditMode) {
+      if (updated !== displayHtml) {
+        setDisplayHtml(updated)
+      }
     }
 
     if (onHtmlChange) {
@@ -725,8 +906,15 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       onHtmlChange(updated)
     }
 
+    // Restore scroll position after a brief delay to ensure DOM is updated
+    if (iframeWindow) {
+      setTimeout(() => {
+        iframeWindow.scrollTo(scrollX, scrollY)
+      }, 0)
+    }
+
     return updated
-  }, [displayHtml, html, onHtmlChange, readIframeHtml])
+  }, [displayHtml, html, onHtmlChange, readIframeHtml, isEditMode])
 
   useEffect(() => {
     persistEditedHtmlRef.current = persistEditedHtml
@@ -738,8 +926,10 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       clearHighlightedLink()
       resetVideoMessageTimer()
       clearHighlightedVideo()
+      resetImageMessageTimer()
+      clearHighlightedImage()
     }
-  }, [resetLinkMessageTimer, clearHighlightedLink, resetVideoMessageTimer, clearHighlightedVideo])
+  }, [resetLinkMessageTimer, clearHighlightedLink, resetVideoMessageTimer, clearHighlightedVideo, resetImageMessageTimer, clearHighlightedImage])
 
   useEffect(() => {
     if (skipNextHtmlSync.current) {
@@ -752,18 +942,24 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   }, [html])
 
   useEffect(() => {
-    setIframeReady(false)
-  }, [displayHtml])
+    // Only reset iframe ready state if we're not in edit mode
+    // This prevents iframe reload while editing
+    if (!isEditMode) {
+      setIframeReady(false)
+    }
+  }, [displayHtml, isEditMode])
 
   useEffect(() => {
     updateLinkEditorSelection(null)
     updateVideoEditorSelection(null)
-  }, [displayHtml, updateLinkEditorSelection])
+    updateImageEditorSelection(null)
+  }, [displayHtml, updateLinkEditorSelection, updateVideoEditorSelection, updateImageEditorSelection])
 
   useEffect(() => {
     if (!isEditMode) {
       updateLinkEditorSelection(null)
       updateVideoEditorSelection(null)
+      updateImageEditorSelection(null)
     } else {
       // Re-setup play button handlers when entering edit mode
       const doc = getIframeDocument(iframeRef.current)
@@ -773,7 +969,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
         }, 100)
       }
     }
-  }, [isEditMode, updateLinkEditorSelection, updateVideoEditorSelection])
+  }, [isEditMode, updateLinkEditorSelection, updateVideoEditorSelection, updateImageEditorSelection])
 
   useEffect(() => {
     const iframe = iframeRef.current
@@ -854,6 +1050,117 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
 
     const cleanupMarkers = markEditableElements(doc)
 
+    // Add hover tooltips for images and videos
+    const addHoverTooltips = () => {
+      const images = doc.querySelectorAll<HTMLImageElement>("img")
+      const videoElements = doc.querySelectorAll<HTMLElement>(
+        `button[${VIDEO_YOUTUBE_ATTRIBUTE}], button[${VIDEO_CDN_ATTRIBUTE}], [${VIDEO_YOUTUBE_ATTRIBUTE}], [${VIDEO_CDN_ATTRIBUTE}]`
+      )
+
+      images.forEach((img) => {
+        if (!img.hasAttribute("data-mu-tooltip-added")) {
+          img.setAttribute("data-mu-tooltip-added", "true")
+          img.setAttribute("title", "Click to change image")
+          
+          const showTooltip = (e: MouseEvent) => {
+            // Remove existing tooltip if any
+            const existing = img.querySelector(".mu-hover-tooltip")
+            if (existing) existing.remove()
+
+            const tooltip = doc.createElement("div")
+            tooltip.className = "mu-hover-tooltip"
+            tooltip.textContent = "Click to change image"
+            tooltip.style.cssText = `
+              position: absolute;
+              top: -32px;
+              left: 50%;
+              transform: translateX(-50%);
+              font-size: 10px;
+              letter-spacing: 0.4px;
+              text-transform: uppercase;
+              padding: 4px 10px;
+              border-radius: 999px;
+              background: rgba(86, 149, 255, 0.96);
+              color: #ffffff;
+              font-family: "Inter", "Segoe UI", sans-serif;
+              box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+              pointer-events: none;
+              z-index: 10000;
+              white-space: nowrap;
+            `
+            if (img.style.position === "" || img.style.position === "static") {
+              img.style.position = "relative"
+            }
+            img.appendChild(tooltip)
+          }
+
+          const hideTooltip = () => {
+            const tooltip = img.querySelector(".mu-hover-tooltip")
+            if (tooltip) {
+              tooltip.remove()
+            }
+          }
+
+          img.addEventListener("mouseenter", showTooltip)
+          img.addEventListener("mouseleave", hideTooltip)
+        }
+      })
+
+      videoElements.forEach((videoEl) => {
+        if (!videoEl.hasAttribute("data-mu-tooltip-added")) {
+          videoEl.setAttribute("data-mu-tooltip-added", "true")
+          videoEl.setAttribute("title", "Click to edit video")
+          
+          const showTooltip = (e: MouseEvent) => {
+            // Remove existing tooltip if any
+            const existing = videoEl.querySelector(".mu-hover-tooltip")
+            if (existing) existing.remove()
+
+            const tooltip = doc.createElement("div")
+            tooltip.className = "mu-hover-tooltip"
+            tooltip.textContent = "Click to edit video"
+            tooltip.style.cssText = `
+              position: absolute;
+              top: -32px;
+              left: 50%;
+              transform: translateX(-50%);
+              font-size: 10px;
+              letter-spacing: 0.4px;
+              text-transform: uppercase;
+              padding: 4px 10px;
+              border-radius: 999px;
+              background: rgba(250, 209, 51, 0.96);
+              color: #050505;
+              font-family: "Inter", "Segoe UI", sans-serif;
+              box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+              pointer-events: none;
+              z-index: 10000;
+              white-space: nowrap;
+            `
+            if (videoEl.style.position === "" || videoEl.style.position === "static") {
+              videoEl.style.position = "relative"
+            }
+            videoEl.appendChild(tooltip)
+          }
+
+          const hideTooltip = () => {
+            const tooltip = videoEl.querySelector(".mu-hover-tooltip")
+            if (tooltip) {
+              tooltip.remove()
+            }
+          }
+
+          videoEl.addEventListener("mouseenter", showTooltip)
+          videoEl.addEventListener("mouseleave", hideTooltip)
+        }
+      })
+    }
+
+    // Add tooltips after a short delay to ensure DOM is ready
+    setTimeout(() => {
+      addHoverTooltips()
+    }, 100)
+
     const resolveLinkableElement = (target: EventTarget | null): HTMLElement | null => {
       if (!target) {
         return null
@@ -931,6 +1238,27 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       return null
     }
 
+    const resolveImageElement = (target: EventTarget | null): HTMLImageElement | null => {
+      if (!target) {
+        return null
+      }
+
+      const elementCandidate = target as Element | null
+      if (elementCandidate && elementCandidate.tagName?.toLowerCase() === "img") {
+        return elementCandidate as HTMLImageElement
+      }
+
+      // Check if clicked element is inside an img
+      if (elementCandidate && typeof elementCandidate.closest === "function") {
+        const imgParent = elementCandidate.closest("img") as HTMLImageElement | null
+        if (imgParent && doc.body.contains(imgParent)) {
+          return imgParent
+        }
+      }
+
+      return null
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault()
@@ -947,13 +1275,27 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
 
     const handleClick = (event: MouseEvent) => {
       // In edit mode, prioritize selection over action
-      // Check for video element first
+      // Check for image element first
+      const imageElement = resolveImageElement(event.target)
+      if (imageElement) {
+        event.preventDefault()
+        event.stopPropagation()
+        // Always allow re-selection, even if clicking the same image
+        updateImageEditorSelection(imageElement)
+        updateVideoEditorSelection(null)
+        updateLinkEditorSelection(null)
+        // Prevent any default behavior that might cause scrolling
+        return false
+      }
+
+      // Check for video element
       const videoElement = resolveVideoElement(event.target)
       if (videoElement) {
         event.preventDefault()
         event.stopPropagation()
         updateVideoEditorSelection(videoElement)
         updateLinkEditorSelection(null)
+        updateImageEditorSelection(null)
         return
       }
 
@@ -963,13 +1305,21 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
         event.preventDefault()
         updateLinkEditorSelection(linkElement)
         updateVideoEditorSelection(null)
+        updateImageEditorSelection(null)
       } else {
         updateLinkEditorSelection(null)
         updateVideoEditorSelection(null)
+        updateImageEditorSelection(null)
       }
     }
 
     const handleFocusIn = (event: FocusEvent) => {
+      const imageElement = resolveImageElement(event.target)
+      if (imageElement) {
+        updateImageEditorSelection(imageElement)
+        return
+      }
+
       const videoElement = resolveVideoElement(event.target)
       if (videoElement) {
         updateVideoEditorSelection(videoElement)
@@ -982,16 +1332,131 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       }
     }
 
+    const handleDragOver = (event: DragEvent) => {
+      const imageElement = resolveImageElement(event.target)
+      if (imageElement && imageElement === imageEditorTarget) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+
+    const handleDrop = (event: DragEvent) => {
+      const imageElement = resolveImageElement(event.target)
+      // Allow dropping on any image, not just the selected one
+      if (imageElement) {
+        event.preventDefault()
+        event.stopPropagation()
+
+        // Select the image if not already selected
+        if (imageElement !== imageEditorTarget) {
+          updateImageEditorSelection(imageElement)
+        }
+
+        const file = event.dataTransfer?.files?.[0]
+        if (!file) return
+
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+          showImageMessage("Please drop an image file", "error")
+          return
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          showImageMessage("Image size should be less than 10MB", "error")
+          return
+        }
+
+        // Save scroll position
+        const iframeWindow = getIframeWindow(iframeRef.current)
+        let scrollX = 0
+        let scrollY = 0
+        if (iframeWindow) {
+          scrollX = iframeWindow.scrollX || iframeWindow.pageXOffset || 0
+          scrollY = iframeWindow.scrollY || iframeWindow.pageYOffset || 0
+        }
+
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const result = reader.result as string
+          const wasSelected = imageElement === imageEditorTarget
+          
+          imageElement.src = result
+          
+          // Re-apply selection attribute after src change
+          if (wasSelected) {
+            setTimeout(() => {
+              const doc = getIframeDocument(iframeRef.current)
+              if (doc && doc.body.contains(imageElement)) {
+                imageElement.setAttribute(IMAGE_TARGET_ATTRIBUTE, "true")
+                highlightedImageRef.current = imageElement
+                // Ensure selection state is maintained
+                setImageEditorTarget(imageElement)
+              }
+            }, 10)
+          }
+          
+          // Only persist HTML without reloading iframe (don't update displayHtml in edit mode)
+          const updated = readIframeHtml()
+          if (updated && onHtmlChange) {
+            skipNextHtmlSync.current = true
+            onHtmlChange(updated)
+          }
+          
+          showImageMessage("Image updated", "success")
+          
+          // Restore scroll position
+          if (iframeWindow) {
+            setTimeout(() => {
+              iframeWindow.scrollTo(scrollX, scrollY)
+            }, 0)
+          }
+          
+          // Keep selection active so user can continue editing other images
+        }
+        reader.onerror = () => {
+          showImageMessage("Failed to read image file", "error")
+        }
+        reader.readAsDataURL(file)
+      }
+    }
+
+    // Prevent default link behavior in edit mode
+    const handleLinkClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (target && (target.tagName === "A" || target.closest("a"))) {
+        const imageElement = resolveImageElement(event.target)
+        const videoElement = resolveVideoElement(event.target)
+        // Only prevent default if it's not an image or video we're editing
+        if (!imageElement && !videoElement) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      }
+    }
+
     doc.addEventListener("keydown", handleKeyDown)
     doc.addEventListener("click", handleClick, true)
+    doc.addEventListener("click", handleLinkClick, true)
     doc.addEventListener("focusin", handleFocusIn)
+    doc.addEventListener("dragover", handleDragOver, true)
+    doc.addEventListener("drop", handleDrop, true)
 
     return () => {
       cleanupMarkers()
 
       doc.removeEventListener("keydown", handleKeyDown)
       doc.removeEventListener("click", handleClick, true)
+      doc.removeEventListener("click", handleLinkClick, true)
       doc.removeEventListener("focusin", handleFocusIn)
+      doc.removeEventListener("dragover", handleDragOver, true)
+      doc.removeEventListener("drop", handleDrop, true)
+
+      // Remove all tooltips
+      doc.querySelectorAll(".mu-hover-tooltip").forEach((tooltip) => tooltip.remove())
+      doc.querySelectorAll("[data-mu-tooltip-added]").forEach((el) => el.removeAttribute("data-mu-tooltip-added"))
+
+      updateImageEditorSelection(null)
 
       doc.body.removeAttribute("contenteditable")
       doc.body.removeAttribute("data-mu-edit-mode")
@@ -1007,7 +1472,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
         setupPlayButtonHandlers(doc)
       }, 100)
     }
-  }, [isEditMode, updateLinkEditorSelection, updateVideoEditorSelection])
+  }, [isEditMode, updateLinkEditorSelection, updateVideoEditorSelection, updateImageEditorSelection])
 
   useEffect(() => {
     onEditModeChange?.(isEditMode)
@@ -1264,6 +1729,151 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     showVideoMessage("Link removed", "success")
   }
 
+  const handleImageFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      showImageMessage("Please select an image file", "error")
+      return
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      showImageMessage("Image size should be less than 10MB", "error")
+      return
+    }
+
+    // Save scroll position before updating
+    const iframeWindow = getIframeWindow(iframeRef.current)
+    let scrollX = 0
+    let scrollY = 0
+    if (iframeWindow) {
+      scrollX = iframeWindow.scrollX || iframeWindow.pageXOffset || 0
+      scrollY = iframeWindow.scrollY || iframeWindow.pageYOffset || 0
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const result = reader.result as string
+      const target = getResolvedImageTarget()
+      if (target) {
+        // Save reference to maintain selection
+        const wasSelected = target === imageEditorTarget
+        
+        target.src = result
+        
+        // Re-apply selection attribute after src change
+        if (wasSelected) {
+          setTimeout(() => {
+            const doc = getIframeDocument(iframeRef.current)
+            if (doc && doc.body.contains(target)) {
+              target.setAttribute(IMAGE_TARGET_ATTRIBUTE, "true")
+              highlightedImageRef.current = target
+              // Ensure selection state is maintained
+              setImageEditorTarget(target)
+            }
+          }, 10)
+        }
+        
+        // Only persist HTML without reloading iframe (don't update displayHtml in edit mode)
+        const updated = readIframeHtml()
+        if (updated && onHtmlChange) {
+          skipNextHtmlSync.current = true
+          onHtmlChange(updated)
+        }
+        
+        showImageMessage("Image updated", "success")
+        
+        // Restore scroll position
+        if (iframeWindow) {
+          setTimeout(() => {
+            iframeWindow.scrollTo(scrollX, scrollY)
+          }, 0)
+        }
+        
+        // Keep selection active so user can continue editing other images
+      }
+    }
+    reader.onerror = () => {
+      showImageMessage("Failed to read image file", "error")
+    }
+    reader.readAsDataURL(file)
+
+    // Reset input
+    if (imageFileInputRef.current) {
+      imageFileInputRef.current.value = ""
+    }
+  }
+
+  const handleImageUrlChange = (url: string) => {
+    const target = getResolvedImageTarget()
+    if (!target) {
+      showImageMessage("Select an image first", "error")
+      return
+    }
+
+    if (!url.trim()) {
+      showImageMessage("Enter a valid image URL", "error")
+      return
+    }
+
+    // Basic URL validation
+    try {
+      new URL(url)
+    } catch {
+      // Not a full URL, might be a relative path or data URL
+      if (!url.startsWith("/") && !url.startsWith("data:image/")) {
+        showImageMessage("Enter a valid image URL or path", "error")
+        return
+      }
+    }
+
+    // Save scroll position before updating
+    const iframeWindow = getIframeWindow(iframeRef.current)
+    let scrollX = 0
+    let scrollY = 0
+    if (iframeWindow) {
+      scrollX = iframeWindow.scrollX || iframeWindow.pageXOffset || 0
+      scrollY = iframeWindow.scrollY || iframeWindow.pageYOffset || 0
+    }
+
+    const wasSelected = target === imageEditorTarget
+    
+    target.src = url
+    
+    // Re-apply selection attribute after src change
+    if (wasSelected) {
+      setTimeout(() => {
+        const doc = getIframeDocument(iframeRef.current)
+        if (doc && doc.body.contains(target)) {
+          target.setAttribute(IMAGE_TARGET_ATTRIBUTE, "true")
+          highlightedImageRef.current = target
+          // Ensure selection state is maintained
+          setImageEditorTarget(target)
+        }
+      }, 10)
+    }
+    
+    // Only persist HTML without reloading iframe (don't update displayHtml in edit mode)
+    const updated = readIframeHtml()
+    if (updated && onHtmlChange) {
+      skipNextHtmlSync.current = true
+      onHtmlChange(updated)
+    }
+    
+    showImageMessage("Image updated", "success")
+    
+    // Restore scroll position
+    if (iframeWindow) {
+      setTimeout(() => {
+        iframeWindow.scrollTo(scrollX, scrollY)
+      }, 0)
+    }
+  }
+
+
   const handleToggleEditMode = () => {
     if (!displayHtml || isLoading || !iframeReady) {
       return
@@ -1501,6 +2111,61 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
               {videoEditorMessage && (
                 <span className={styles.linkToolbarMessage} data-tone={videoEditorTone} aria-live="polite">
                   {videoEditorMessage}
+                </span>
+              )}
+            </div>
+          )}
+          {imageEditorTarget && (
+            <div className={styles.linkToolbar}>
+              <div className={styles.linkToolbarTop}>
+                <div>
+                  <h3 className={styles.linkToolbarTitle}>Edit Image</h3>
+                  <p className={styles.linkToolbarHint}>Drag & drop an image, upload a file, or enter an image URL</p>
+                </div>
+                <button
+                  className={styles.linkToolbarClearSelection}
+                  onClick={() => updateImageEditorSelection(null)}
+                  type="button"
+                >
+                  Clear selection
+                </button>
+              </div>
+              <div className={styles.linkToolbarControls}>
+                <input
+                  type="text"
+                  className={styles.linkInput}
+                  placeholder="Image URL (e.g., https://example.com/image.jpg)"
+                  onBlur={(e) => handleImageUrlChange(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleImageUrlChange(e.currentTarget.value)
+                    }
+                  }}
+                  disabled={!imageEditorTarget}
+                />
+                <input
+                  ref={imageFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileSelect}
+                  className={styles.fileInputHidden}
+                  id="image-upload-edit"
+                  disabled={!imageEditorTarget}
+                />
+                <label
+                  htmlFor="image-upload-edit"
+                  className={styles.applyLinkButton}
+                  style={{ cursor: imageEditorTarget ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: "6px" }}>
+                    <path d="M13.3333 6.66667L10 3.33333M10 3.33333L6.66667 6.66667M10 3.33333V13.3333M3.33333 13.3333V15C3.33333 15.442 3.50952 15.866 3.82198 16.1785C4.13445 16.491 4.55841 16.6667 5 16.6667H15C15.4416 16.6667 15.8655 16.491 16.178 16.1785C16.4905 15.866 16.6667 15.442 16.6667 15V13.3333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Upload Image
+                </label>
+              </div>
+              {imageEditorMessage && (
+                <span className={styles.linkToolbarMessage} data-tone={imageEditorTone} aria-live="polite">
+                  {imageEditorMessage}
                 </span>
               )}
             </div>
