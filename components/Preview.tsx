@@ -1374,9 +1374,9 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
         {/* <div className={currentStyles.titleSection}>
           {activeVersionLabel && <span className={currentStyles.versionLabel}>{activeVersionLabel}</span>}
         </div> */}
-        <div className={currentStyles.headerActions}>
-          <button
-            className={currentStyles.secondaryButton}
+        <div className={styles.headerActions}>
+          {false &&( <button
+            className={styles.secondaryButton}
             onClick={handleCopyCode}
             disabled={!displayHtml || isLoading}
             type="button"
@@ -1397,7 +1397,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                 Copy code
               </>
             )}
-          </button>
+          </button>)}
           <button
             className={currentStyles.secondaryButton}
             onClick={handleViewFullPage}
