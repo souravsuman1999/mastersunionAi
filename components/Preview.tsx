@@ -1947,7 +1947,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
           {activeVersionLabel && <span className={styles.versionLabel}>{activeVersionLabel}</span>}
         </div> */}
         <div className={styles.headerActions}>
-          <button
+          {false &&( <button
             className={styles.secondaryButton}
             onClick={handleCopyCode}
             disabled={!displayHtml || isLoading}
@@ -1969,7 +1969,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                 Copy code
               </>
             )}
-          </button>
+          </button>)}
           <button
             className={styles.secondaryButton}
             onClick={handleViewFullPage}

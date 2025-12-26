@@ -25,9 +25,9 @@
   background: #0a0a0a;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 3rem 2.5rem;
+  padding: 1rem;
   width: 100%;
-  max-width: 420px;
+  max-width: 620px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 1;
@@ -59,19 +59,43 @@
   font-size: 0.95rem;
   color: rgba(255, 255, 255, 0.6);
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.75rem;
+}
+
+.modeSwitch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 1.25rem;
+}
+
+.modeButton {
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--go-semibold);
+  font-size: 0.95rem;
+  padding: 0.6rem 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modeButtonActive {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.15);
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-.inputContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
 }
 
 .input {
@@ -85,6 +109,136 @@
   font-size: 1rem;
   outline: none;
   transition: all 0.2s ease;
+}
+
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-family: var(--go-regular);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.passwordField {
+  gap: 0.55rem;
+}
+
+.passwordInputWrapper {
+  position: relative;
+}
+
+.passwordInput {
+  padding-right: 3.75rem;
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  backdrop-filter: blur(6px);
+}
+
+.passwordToggle:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.passwordToggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.passwordToggleIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.googleButton {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.02);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  font-family: var(--go-semibold);
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.googleButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.googleButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.googleIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--go-regular);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dividerText {
+  white-space: nowrap;
+}
+
+.infoBanner {
+  margin: 1.25rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--go-regular);
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .input::placeholder {
@@ -102,12 +256,40 @@
   cursor: not-allowed;
 }
 
-.errorMessage {
+.statusMessage {
   font-family: var(--go-regular);
-  font-size: 0.875rem;
-  color: #ff4444;
-  margin: 0;
-  padding-left: 0.25rem;
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0;
+  text-align: center;
+}
+
+.statusError {
+  color: #ff6b6b;
+}
+
+.statusSuccess {
+  color: #72eab0;
+}
+
+.helperRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.25rem;
+}
+
+.linkButton {
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: var(--go-regular);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.linkButton:hover:not(:disabled) {
+  color: #ffffff;
 }
 
 .submitButton {
@@ -138,6 +320,19 @@
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+.supportText {
+  margin-top: 2rem;
+  font-family: var(--go-regular);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+}
+
+.supportLink {
+  color: #ffffff;
+  text-decoration: underline;
 }
 
 @media (max-width: 640px) {
