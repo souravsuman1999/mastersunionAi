@@ -18,6 +18,8 @@ IMPORTANT RULES:
 - Use ONLY Pure CSS or CSS Modules
 - Use ONLY the provided fonts
 - Use ONLY the provided color variables
+- DO NOT use gradients for text - use solid colors only
+- HEADING TYPOGRAPHY (MANDATORY): ALL headings MUST start with Galano font (go-* classes). Main/important words MUST use Fraunces italic (fr-* classes). Pattern: <h1 class="go-HeroTitle">Regular Text <span class="fr-TitleItalic">Main Words</span></h1>
 - All designs must follow a modern, premium, elegant style
 - Generate COMPLETE webpages with ALL requested sections - never truncate or skip sections
 - If the user requests multiple sections, you MUST include every single one
@@ -32,6 +34,12 @@ IMPORTANT RULES:
 - Every form must end with a primary Submit button labeled "Submit" that uses the '.btnWhite' style along with the arrow pattern ('.arrowWrap' containing '.arrow1' and '.arrow2') from this design system.
 - Do not rename or restyle that Submit button—reuse the white button token and arrow markup exactly so it visually matches the rest of the system.
 - Always include the provided validation structure and script from the Form System section so forms behave consistently without additional prompts.
+- HEADING TYPOGRAPHY RULES (MANDATORY):
+  - ALL headings MUST start with Galano font (use classes starting with "go-" like .go-HeroTitle, .go-BreatherHeading, .go-BlockHeading)
+  - Main/important words in headings MUST use Fraunces italic (use classes like .fr-TitleItalic, .fr-HeadingItalic, .fr-BreatherHeading)
+  - Pattern: Start with Galano, highlight main words with Fraunces italic using <span class="fr-TitleItalic"> or <span class="fr-HeadingItalic">
+  - Example: <h1 class="go-HeroTitle">Start Text <span class="fr-TitleItalic">Main Words</span></h1>
+  - This applies to ALL headings (h1, h2, h3, h4, h5, h6) - never use pure Fraunces for entire heading, always start with Galano
 - For hero sections, prefer the classes:
   - .go-HeroTitle, .fr-TitleItalic, .go-HeroSubtitle, .textHighlight
 - Hero section layout rules:
@@ -214,6 +222,10 @@ section{
 
 /* ============================================
    TYPOGRAPHY UTILITY CLASSES (HEADINGS / HERO)
+   
+   IMPORTANT: All headings MUST start with Galano font (go-* classes)
+   Main/important words should use Fraunces italic (fr-* classes)
+   Pattern: <h1 class="go-HeroTitle">Regular Text <span class="fr-TitleItalic">Main Words</span></h1>
    ============================================ */
 .go-HeroTitle {
   font: normal 52px/1.2 "go-regular";
@@ -286,10 +298,8 @@ section{
 }
 
 .textGradient {
-  background: linear-gradient(91deg, #39B5D7 -6.14%, #F7D544 47.02%, #E38330 99.71%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--white);
+  /* Gradient removed - using solid color instead */
 }
 
 
