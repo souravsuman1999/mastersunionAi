@@ -2039,7 +2039,14 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
 
 
   const handleToggleEditMode = () => {
-    if (!displayHtml || isLoading || !iframeReady) {
+    if (!displayHtml || isLoading) {
+      return
+    }
+
+    // Check if iframe document is accessible (more reliable than iframeReady state)
+    const iframe = iframeRef.current
+    const iframeDoc = iframe ? getIframeDocument(iframe) : null
+    if (!iframeDoc || !iframeDoc.body) {
       return
     }
 
@@ -2152,7 +2159,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
             <button
               className={`${currentStyles.editButton} ${isEditMode ? currentStyles.editButtonActive : ""}`}
               onClick={handleToggleEditMode}
-              disabled={!displayHtml || isLoading || !iframeReady}
+              disabled={!displayHtml || isLoading}
               type="button"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
