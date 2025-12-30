@@ -119,9 +119,9 @@ const injectVideoPopup = (doc: Document) => {
 
   const popup = doc.createElement("div")
   popup.id = "heroPopup"
-  popup.className = "popup"
+  popup.className = "popupVideo"
   popup.innerHTML = `
-    <div class="popupBody">
+    <div class="popupVideoBody">
       <div class="floatingClose">
         <img src="https://files.mastersunion.link/resources/svg/close.svg" alt="Close" />
       </div>
@@ -405,6 +405,132 @@ const injectBaseStyles = (doc: Document) => {
         z-index: 10000;
         white-space: nowrap;
       }
+      .popupVideo {
+        position: fixed;
+        z-index: 99999;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: hsla(0, 0%, 0%, 0.8);
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s linear 0.3s, opacity 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .popupVideoBody {
+        max-height: calc(100dvh - 50px);
+        max-width: calc(100vw - 50px);
+        height: 80vh;
+        min-height: 80vh;
+        width: 100%;
+        margin: 0 auto;
+        position: relative;
+        top: 8px;
+      }
+      .popupVideo.active {
+        opacity: 1;
+        visibility: visible;
+        transition-delay: 0s;
+      }
+      .popupVideo .floatingClose {
+        position: absolute;
+        line-height: 0;
+        z-index: 99;
+        right: -20px;
+        top: -20px;
+        cursor: pointer;
+      }
+      .popupVideo .floatingClose img {
+        width: 50px;
+        height: 50px;
+      }
+      .popupForm {
+        position: fixed;
+        z-index: 99999;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: hsla(0, 0%, 0%, 0.6);
+        backdrop-filter: blur(4px);
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s linear 0.2s, opacity 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .popupFormBody {
+        max-height: calc(100dvh - 40px);
+        max-width: 600px;
+        width: 100%;
+        margin: 0 auto;
+        position: relative;
+        background: var(--white, #ffffff);
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(9, 9, 9, 0.3);
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      .popupForm.active {
+        opacity: 1;
+        visibility: visible;
+        transition-delay: 0s;
+      }
+      .popupForm .floatingClose {
+        position: absolute;
+        line-height: 0;
+        z-index: 99;
+        right: 16px;
+        top: 16px;
+        cursor: pointer;
+        background: var(--white4, #f5f5f5);
+        border-radius: 50%;
+        padding: 8px;
+        transition: background 0.2s ease;
+      }
+      .popupForm .floatingClose:hover {
+        background: var(--grey4, #E5E5E5);
+      }
+      .popupForm .floatingClose img {
+        width: 20px;
+        height: 20px;
+      }
+      @media (max-width: 767px) {
+        .popupForm {
+          padding: 16px;
+        }
+        .popupFormBody {
+          max-height: calc(100dvh - 32px);
+          border-radius: 16px;
+        }
+        .popupForm .floatingClose {
+          right: 12px;
+          top: 12px;
+          padding: 6px;
+        }
+        .popupForm .floatingClose img {
+          width: 18px;
+          height: 18px;
+        }
+        .popupVideoBody {
+          max-height: calc(100dvh - 30px);
+          max-width: calc(100vw - 30px);
+        }
+        .popupVideo .floatingClose {
+          right: -10px;
+          top: -10px;
+        }
+        .popupVideo .floatingClose img {
+          width: 50px;
+          height: 50px;
+        }
+      }
+      /* Legacy support */
       .popup {
         position: fixed;
         z-index: 99999;
@@ -444,8 +570,8 @@ const injectBaseStyles = (doc: Document) => {
         cursor: pointer;
       }
       .floatingClose img {
-        width: 30px;
-        height: 30px;
+        width: 50px;
+        height: 50px;
       }
       .iframeHero {
         width: inherit;
