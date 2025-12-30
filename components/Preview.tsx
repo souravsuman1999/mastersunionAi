@@ -1467,13 +1467,32 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       const linkElement = resolveLinkableElement(event.target)
       if (linkElement) {
         event.preventDefault()
+        event.stopPropagation()
+        // Set selection immediately
         updateLinkEditorSelection(linkElement)
         updateVideoEditorSelection(null)
         updateImageEditorSelection(null)
       } else {
-        updateLinkEditorSelection(null)
-        updateVideoEditorSelection(null)
-        updateImageEditorSelection(null)
+        // Only clear selections if we're clicking on something that's definitely not a link/button
+        // This prevents clearing when clicking on nested elements inside links/buttons
+        const target = event.target as HTMLElement
+        if (target) {
+          const isInsideLinkOrButton = target.closest("a, button") !== null
+          const isLinkOrButton = target.tagName === "A" || target.tagName === "BUTTON"
+          
+          // Don't clear if we clicked on or inside a link/button
+          // This allows clicking on nested elements (like spans inside links) to keep the selection
+          if (!isLinkOrButton && !isInsideLinkOrButton) {
+            updateLinkEditorSelection(null)
+            updateVideoEditorSelection(null)
+            updateImageEditorSelection(null)
+          }
+        } else {
+          // Only clear if target is null/undefined
+          updateLinkEditorSelection(null)
+          updateVideoEditorSelection(null)
+          updateImageEditorSelection(null)
+        }
       }
     }
 
@@ -1585,22 +1604,25 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       }
     }
 
-    // Prevent default link behavior in edit mode
+    // Prevent default link behavior in edit mode (but don't stop propagation to allow selection)
     const handleLinkClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement
       if (target && (target.tagName === "A" || target.closest("a"))) {
         const imageElement = resolveImageElement(event.target)
         const videoElement = resolveVideoElement(event.target)
         // Only prevent default if it's not an image or video we're editing
+        // Don't stop propagation - let handleClick set the selection first
         if (!imageElement && !videoElement) {
           event.preventDefault()
-          event.stopPropagation()
+          // Don't stop propagation - we want handleClick to run and set selection
         }
       }
     }
 
     doc.addEventListener("keydown", handleKeyDown)
+    // Add handleClick first with capture phase to set selection
     doc.addEventListener("click", handleClick, true)
+    // Add handleLinkClick after to prevent navigation but allow selection
     doc.addEventListener("click", handleLinkClick, true)
     doc.addEventListener("focusin", handleFocusIn)
     doc.addEventListener("dragover", handleDragOver, true)
@@ -2051,13 +2073,16 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
 
     if (isEditMode) {
-      updateLinkEditorSelection(null)
       persistEditedHtml()
       setIsEditMode(false)
+      // Don't clear selections - keep toolbars visible
       return
     }
 
+    // Clear selections when entering edit mode to start fresh
     updateLinkEditorSelection(null)
+    updateVideoEditorSelection(null)
+    updateImageEditorSelection(null)
     setIsEditMode(true)
   }
 
@@ -2177,7 +2202,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
           </div>
         </div>
       </div>
-      {isEditMode && (
+      {(linkEditorTarget || videoEditorTarget || imageEditorTarget) && (
         <>
           {linkEditorTarget && (
             <div className={currentStyles.linkToolbar}>
