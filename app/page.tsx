@@ -289,6 +289,7 @@ import Preview from "@/components/Preview"
 import ThemeSelector from "@/components/ThemeSelector"
 import { useTheme } from "@/contexts/ThemeContext"
 import styles from "./page.module.css"
+import tetrStyles from "./page.tetr.module.css"
 import ProfileMenu from "@/components/ProfileMenu"
 
 
