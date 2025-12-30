@@ -44,7 +44,18 @@ IMPORTANT RULES:
   - .arrowWrap, .arrow1, .arrow2, .arrowhorizontal, .arrowhorizontalClone, .arrowWrapper, .arrowMain, .arrowClone
 - For carousels/sliders, use Swiper.js with the provided Swiper classes and styling
 - For video play buttons, ALWAYS include the Video Popup System HTML structure and JavaScript functions (see Video Popup System section). Use data-video-youtube or data-video-cdn attributes on play buttons to enable video playback in the popup.
-- For play button icons, ALWAYS use this image: https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg - DO NOT use SVG code or other play icons.
+- For "Watch Now" button icons, ALWAYS use the inline SVG provided in the Video Popup System section - DO NOT use image URLs or other play icons.
+- Video popups use the .popupVideo class (different from form popups which use .popupForm class).
+- MASTERS SECTIONS (COMPULSORY RULES):
+  - If a section displays "masters" (program masters, faculty masters, etc.) with categories:
+    * MUST display as tabs with category names as tab labels
+    * Each tab should show masters from that category
+    * Use clean tab navigation with smooth transitions
+  - If a section displays "masters" WITHOUT categories:
+    * MUST display as an infinite marquee/scrolling animation
+    * The marquee should scroll smoothly and continuously
+    * Masters should be displayed in a horizontal scrolling layout
+  - This behavior is MANDATORY for all masters sections - you MUST implement either tabs (with categories) or infinite marquee (without categories)
 
 /* ============================================
    MASTERS' UNION COLOR TOKENS
@@ -372,7 +383,7 @@ section{
 .heroSectionContent {
   position: relative;
   z-index: 2;
-  max-width: 1280px;
+  max-width: 60%;
   margin: 0 auto;
   padding: 0 20px;
   width: 100%;
@@ -427,6 +438,7 @@ section{
   
   .heroSectionContent {
     padding: 0 16px;
+    max-width: 100%;
   }
   
   .heroSectionTwoCol {
@@ -1449,9 +1461,9 @@ Always include this vanilla JS validation block after the form:
 
 
 /* ============================================
-   VIDEO POPUP SYSTEM
+   VIDEO POPUP SYSTEM (HERO)
    ============================================ */
-.popup {
+.popupVideo {
   position: fixed;
   z-index: 99999;
   top: 0;
@@ -1467,7 +1479,7 @@ Always include this vanilla JS validation block after the form:
   justify-content: center;
 }
 
-.popupBody {
+.popupVideoBody {
   max-height: calc(100dvh - 50px);
   max-width: calc(100vw - 50px);
   height: 80vh;
@@ -1478,13 +1490,13 @@ Always include this vanilla JS validation block after the form:
   top: 8px;
 }
 
-.popup.active {
+.popupVideo.active {
   opacity: 1;
   visibility: visible;
   transition-delay: 0s;
 }
 
-.floatingClose {
+.popupVideo .floatingClose {
   position: absolute;
   line-height: 0;
   z-index: 99;
@@ -1493,11 +1505,10 @@ Always include this vanilla JS validation block after the form:
   cursor: pointer;
 }
 
-.floatingClose img {
+.popupVideo .floatingClose img {
   width: 50px;
   height: 50px;
   cursor: pointer;
-
 }
 
 .iframeHero {
@@ -1545,20 +1556,154 @@ video.video-element, #html5video_MU {
 }
 
 @media (max-width: 767px) {
-  .popupBody {
+  .popupVideoBody {
     max-height: calc(100dvh - 30px);
     max-width: calc(100vw - 30px);
   }
   
-  .floatingClose {
+  .popupVideo .floatingClose {
     right: -10px;
     top: -10px;
   }
   
-  .floatingClose img {
+  .popupVideo .floatingClose img {
     width: 50px;
     height: 50px;
   }
+}
+
+/* ============================================
+   FORM POPUP SYSTEM
+   ============================================ */
+.popupForm {
+  position: fixed;
+  z-index: 99999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: hsla(0, 0%, 0%, 0.6);
+  backdrop-filter: blur(4px);
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s linear 0.2s, opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.popupFormBody {
+  max-height: calc(100dvh - 40px);
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  background: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(9, 9, 9, 0.3);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.popupForm.active {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.popupForm .floatingClose {
+  position: absolute;
+  line-height: 0;
+  z-index: 99;
+  right: 16px;
+  top: 16px;
+  cursor: pointer;
+  background: var(--white4);
+  border-radius: 50%;
+  padding: 8px;
+  transition: background 0.2s ease;
+}
+
+.popupForm .floatingClose:hover {
+  background: var(--grey4);
+}
+
+.popupForm .floatingClose img {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .popupForm {
+    padding: 16px;
+  }
+  
+  .popupFormBody {
+    max-height: calc(100dvh - 32px);
+    border-radius: 16px;
+  }
+  
+  .popupForm .floatingClose {
+    right: 12px;
+    top: 12px;
+    padding: 6px;
+  }
+  
+  .popupForm .floatingClose img {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Legacy support - keep .popup for backward compatibility */
+.popup {
+  position: fixed;
+  z-index: 99999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: hsla(0, 0%, 0%, 0.8);
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s linear 0.3s, opacity 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popupBody {
+  max-height: calc(100dvh - 50px);
+  max-width: calc(100vw - 50px);
+  height: 80vh;
+  min-height: 80vh;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  top: 8px;
+}
+
+.popup.active {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.floatingClose {
+  position: absolute;
+  line-height: 0;
+  z-index: 99;
+  right: -20px;
+  top: -20px;
+  cursor: pointer;
+}
+
+.floatingClose img {
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
 }
 
 /* ============================================
@@ -1568,13 +1713,17 @@ video.video-element, #html5video_MU {
 VIDEO POPUP SYSTEM:
 The video popup allows playing YouTube videos or CDN-hosted video files in a full-screen modal.
 
-PLAY BUTTON ICON:
-ALWAYS use this image for play button icons: https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg
-DO NOT use SVG code or other play icons. This is the standard play button icon for all video buttons.
+PLAY BUTTON ICON (WATCH NOW BUTTONS):
+For "Watch Now" buttons, ALWAYS use this SVG icon (inline SVG code):
+<svg xmlns="https://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 18 18" fill="none">
+  <path d="M16.875 9.00002C16.8755 9.191 16.8265 9.37886 16.7329 9.54532C16.6392 9.71178 16.5041 9.85117 16.3406 9.94994L6.21 16.1473C6.0392 16.2519 5.84358 16.309 5.64334 16.3127C5.44309 16.3164 5.24549 16.2666 5.07094 16.1684C4.89805 16.0717 4.75402 15.9307 4.65368 15.76C4.55333 15.5892 4.50029 15.3947 4.5 15.1967L4.5 2.80337C4.50029 2.60529 4.55333 2.41086 4.65368 2.24008C4.75402 2.0693 4.89805 1.92832 5.07094 1.83166C5.24549 1.73346 5.44309 1.68365 5.64334 1.68736C5.84358 1.69107 6.0392 1.74816 6.21 1.85275L16.3406 8.05009C16.5041 8.14886 16.6392 8.28826 16.7329 8.45471C16.8265 8.62117 16.8755 8.80903 16.875 9.00002Z" fill="black"></path>
+</svg>
 
-REQUIRED HTML STRUCTURE (add this before </body> in every generated page):
-<div class="popup" id="heroPopup">
-  <div class="popupBody">
+DO NOT use image URLs or other play icons for "Watch Now" buttons. This SVG must be used inline.
+
+REQUIRED HTML STRUCTURE FOR VIDEO POPUP (add this before </body> in every generated page):
+<div class="popupVideo" id="heroPopup">
+  <div class="popupVideoBody">
     <div class="floatingClose">
       <img src="https://files.mastersunion.link/resources/svg/close.svg" alt="Close" onclick="closePopup();" />
     </div>
@@ -1586,6 +1735,16 @@ REQUIRED HTML STRUCTURE (add this before </body> in every generated page):
         Your browser does not support the video tag.
       </video>
     </div>
+  </div>
+</div>
+
+REQUIRED HTML STRUCTURE FOR FORM POPUP (if forms need popup functionality):
+<div class="popupForm" id="formPopup">
+  <div class="popupFormBody">
+    <div class="floatingClose">
+      <img src="https://files.mastersunion.link/resources/svg/close.svg" alt="Close" onclick="closeFormPopup();" />
+    </div>
+    <!-- Form content goes here -->
   </div>
 </div>
 
@@ -1676,22 +1835,28 @@ To make a button open a video popup, add data attributes and onclick handler:
 - data-video-youtube="VIDEO_ID_OR_URL" for YouTube videos
 - data-video-cdn="https://example.com/video.mp4" for CDN videos
 
-Example play button with YouTube video (full URL):
+Example "Watch Now" button with YouTube video (full URL):
 <button class="btnWhite" data-video-youtube="https://www.youtube.com/watch?v=dQw4w9WgXcQ" onclick="openPopup('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'youtube', 0);">
-  <img src="https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg" alt="Play" />
-  Watch Video
+  <svg xmlns="https://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 18 18" fill="none">
+    <path d="M16.875 9.00002C16.8755 9.191 16.8265 9.37886 16.7329 9.54532C16.6392 9.71178 16.5041 9.85117 16.3406 9.94994L6.21 16.1473C6.0392 16.2519 5.84358 16.309 5.64334 16.3127C5.44309 16.3164 5.24549 16.2666 5.07094 16.1684C4.89805 16.0717 4.75402 15.9307 4.65368 15.76C4.55333 15.5892 4.50029 15.3947 4.5 15.1967L4.5 2.80337C4.50029 2.60529 4.55333 2.41086 4.65368 2.24008C4.75402 2.0693 4.89805 1.92832 5.07094 1.83166C5.24549 1.73346 5.44309 1.68365 5.64334 1.68736C5.84358 1.69107 6.0392 1.74816 6.21 1.85275L16.3406 8.05009C16.5041 8.14886 16.6392 8.28826 16.7329 8.45471C16.8265 8.62117 16.8755 8.80903 16.875 9.00002Z" fill="black"></path>
+  </svg>
+  Watch Now
 </button>
 
-Example play button with YouTube video (video ID only):
+Example "Watch Now" button with YouTube video (video ID only):
 <button class="btnWhite" data-video-youtube="dQw4w9WgXcQ" onclick="openPopup('dQw4w9WgXcQ', 'youtube', 0);">
-  <img src="https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg" alt="Play" />
-  Watch Video
+  <svg xmlns="https://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 18 18" fill="none">
+    <path d="M16.875 9.00002C16.8755 9.191 16.8265 9.37886 16.7329 9.54532C16.6392 9.71178 16.5041 9.85117 16.3406 9.94994L6.21 16.1473C6.0392 16.2519 5.84358 16.309 5.64334 16.3127C5.44309 16.3164 5.24549 16.2666 5.07094 16.1684C4.89805 16.0717 4.75402 15.9307 4.65368 15.76C4.55333 15.5892 4.50029 15.3947 4.5 15.1967L4.5 2.80337C4.50029 2.60529 4.55333 2.41086 4.65368 2.24008C4.75402 2.0693 4.89805 1.92832 5.07094 1.83166C5.24549 1.73346 5.44309 1.68365 5.64334 1.68736C5.84358 1.69107 6.0392 1.74816 6.21 1.85275L16.3406 8.05009C16.5041 8.14886 16.6392 8.28826 16.7329 8.45471C16.8265 8.62117 16.8755 8.80903 16.875 9.00002Z" fill="black"></path>
+  </svg>
+  Watch Now
 </button>
 
-Example play button with CDN video:
+Example "Watch Now" button with CDN video:
 <button class="btnWhite" data-video-cdn="https://example.com/video.mp4" onclick="openPopup('https://example.com/video.mp4', 'cdn', 0);">
-  <img src="https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg" alt="Play" />
-  Watch Video
+  <svg xmlns="https://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 18 18" fill="none">
+    <path d="M16.875 9.00002C16.8755 9.191 16.8265 9.37886 16.7329 9.54532C16.6392 9.71178 16.5041 9.85117 16.3406 9.94994L6.21 16.1473C6.0392 16.2519 5.84358 16.309 5.64334 16.3127C5.44309 16.3164 5.24549 16.2666 5.07094 16.1684C4.89805 16.0717 4.75402 15.9307 4.65368 15.76C4.55333 15.5892 4.50029 15.3947 4.5 15.1967L4.5 2.80337C4.50029 2.60529 4.55333 2.41086 4.65368 2.24008C4.75402 2.0693 4.89805 1.92832 5.07094 1.83166C5.24549 1.73346 5.44309 1.68365 5.64334 1.68736C5.84358 1.69107 6.0392 1.74816 6.21 1.85275L16.3406 8.05009C16.5041 8.14886 16.6392 8.28826 16.7329 8.45471C16.8265 8.62117 16.8755 8.80903 16.875 9.00002Z" fill="black"></path>
+  </svg>
+  Watch Now
 </button>
 
 For YouTube, you can use any of these formats in the onclick and data-video-youtube:
@@ -1765,7 +1930,9 @@ Use this when there's NO image element on the right side:
       </a>
 
       <button class="btnWhite outline" data-video-youtube="VIDEO_ID_OR_URL" onclick="openPopup('VIDEO_ID_OR_URL', 'youtube', 0);">
-        <img src="https://images.mastersunion.link/uploads/16062025/v3/MainButton.svg" alt="Play" />
+        <svg xmlns="https://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 18 18" fill="none">
+          <path d="M16.875 9.00002C16.8755 9.191 16.8265 9.37886 16.7329 9.54532C16.6392 9.71178 16.5041 9.85117 16.3406 9.94994L6.21 16.1473C6.0392 16.2519 5.84358 16.309 5.64334 16.3127C5.44309 16.3164 5.24549 16.2666 5.07094 16.1684C4.89805 16.0717 4.75402 15.9307 4.65368 15.76C4.55333 15.5892 4.50029 15.3947 4.5 15.1967L4.5 2.80337C4.50029 2.60529 4.55333 2.41086 4.65368 2.24008C4.75402 2.0693 4.89805 1.92832 5.07094 1.83166C5.24549 1.73346 5.44309 1.68365 5.64334 1.68736C5.84358 1.69107 6.0392 1.74816 6.21 1.85275L16.3406 8.05009C16.5041 8.14886 16.6392 8.28826 16.7329 8.45471C16.8265 8.62117 16.8755 8.80903 16.875 9.00002Z" fill="black"></path>
+        </svg>
         Watch Now
       </button>
     </div>
@@ -1811,6 +1978,184 @@ When selecting background images (for single-column heroes only):
 - Ensure the image URL is publicly accessible
 - The image should complement the hero content and maintain readability with the overlay
 - Use descriptive, contextually appropriate image URLs that match the topic
+*/
+
+/* ============================================
+   MASTERS SECTIONS (COMPULSORY)
+   ============================================ */
+/*
+MASTERS SECTIONS - MANDATORY RULES:
+
+1. IF MASTERS HAVE CATEGORIES:
+   - MUST display as tabs with category names as tab labels
+   - Each tab shows masters from that category
+   - Use smooth tab transitions
+   - Example structure:
+     <section class="mastersSection">
+       <div class="container">
+         <h2 class="go-BreatherHeading">Our Masters</h2>
+         <div class="mastersTabs">
+           <button class="mastersTab active" data-category="business">Business</button>
+           <button class="mastersTab" data-category="technology">Technology</button>
+           <button class="mastersTab" data-category="design">Design</button>
+         </div>
+         <div class="mastersTabContent">
+           <div class="mastersTabPanel active" data-category="business">
+             <!-- Masters cards for business category -->
+           </div>
+           <div class="mastersTabPanel" data-category="technology">
+             <!-- Masters cards for technology category -->
+           </div>
+           <div class="mastersTabPanel" data-category="design">
+             <!-- Masters cards for design category -->
+           </div>
+         </div>
+       </div>
+     </section>
+
+2. IF MASTERS HAVE NO CATEGORIES:
+   - MUST display as infinite marquee/scrolling animation
+   - Smooth, continuous horizontal scrolling
+   - Masters displayed in horizontal layout
+   - Example structure:
+     <section class="mastersSection">
+       <div class="container">
+         <h2 class="go-BreatherHeading">Our Masters</h2>
+         <div class="mastersMarquee">
+           <div class="mastersMarqueeTrack">
+             <!-- Duplicate masters for seamless loop -->
+             <div class="mastersMarqueeItem">Master 1</div>
+             <div class="mastersMarqueeItem">Master 2</div>
+             <div class="mastersMarqueeItem">Master 3</div>
+             <!-- Duplicate for seamless loop -->
+             <div class="mastersMarqueeItem">Master 1</div>
+             <div class="mastersMarqueeItem">Master 2</div>
+             <div class="mastersMarqueeItem">Master 3</div>
+           </div>
+         </div>
+       </div>
+     </section>
+
+CSS FOR MASTERS TABS (when categories exist):
+.mastersTabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--grey3);
+  flex-wrap: wrap;
+}
+
+.mastersTab {
+  background: transparent;
+  border: none;
+  padding: 12px 24px;
+  font: normal 16px/1.4 "go-medium";
+  color: var(--grey);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  top: 1px;
+}
+
+.mastersTab:hover {
+  color: var(--white);
+}
+
+.mastersTab.active {
+  color: var(--white);
+  border-bottom-color: var(--newYellow);
+}
+
+.mastersTabContent {
+  position: relative;
+  min-height: 400px;
+}
+
+.mastersTabPanel {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.mastersTabPanel.active {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+CSS FOR MASTERS MARQUEE (when no categories):
+.mastersMarquee {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  padding: 40px 0;
+}
+
+.mastersMarqueeTrack {
+  display: flex;
+  gap: 24px;
+  animation: marqueeScroll 30s linear infinite;
+  will-change: transform;
+}
+
+.mastersMarqueeTrack:hover {
+  animation-play-state: paused;
+}
+
+.mastersMarqueeItem {
+  flex: 0 0 auto;
+  min-width: 280px;
+  background: var(--black2);
+  border: 1px solid var(--grey3);
+  border-radius: 8px;
+  padding: 24px;
+  transition: transform 0.3s ease;
+}
+
+.mastersMarqueeItem:hover {
+  transform: translateY(-4px);
+  border-color: var(--newYellow);
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+JavaScript for Masters Tabs:
+document.addEventListener('DOMContentLoaded', function() {
+  const tabs = document.querySelectorAll('.mastersTab');
+  const panels = document.querySelectorAll('.mastersTabPanel');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      const category = this.getAttribute('data-category');
+      
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Update active panel
+      panels.forEach(panel => {
+        panel.classList.remove('active');
+        if (panel.getAttribute('data-category') === category) {
+          panel.classList.add('active');
+        }
+      });
+    });
+  });
+});
+
+IMPORTANT: You MUST implement either tabs (with categories) or infinite marquee (without categories) for ALL masters sections. There is no alternative - this is mandatory.
 */
   `;
 }

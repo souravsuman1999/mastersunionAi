@@ -200,6 +200,10 @@
   color: #ff7b7b;
 }
 
+.fileInputHidden {
+  display: none;
+}
+
 .editModeGroup {
   display: flex;
   flex-direction: column;
