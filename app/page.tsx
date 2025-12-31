@@ -490,6 +490,21 @@ useEffect(() => {
   setCurrentPrompt("")
 };
 
+  const handleNewChat = () => {
+    // Reset all chat state
+    setGeneratedHtml("")
+    setCurrentPrompt("")
+    setSelectedVersionId(null)
+    setHasGenerated(false)
+    setError("")
+    
+    // Clear localStorage items related to current chat
+    localStorage.removeItem("ws_selectedVersionId")
+    localStorage.removeItem("ws_generatedHtml")
+    localStorage.removeItem("ws_currentPrompt")
+    localStorage.removeItem("ws_hasGenerated")
+  }
+
 
 
   const handlePreviewHtmlChange = (updatedHtml: string) => {
@@ -519,7 +534,7 @@ useEffect(() => {
           
           <div className={styles.historyHeader}>
             <p className={styles.promptEyebrow}>History</p>
-           <ProfileMenu />
+           <ProfileMenu onNewChat={handleNewChat} />
           </div>
 
           <div className={styles.historyList}>
