@@ -41,7 +41,60 @@ export default function RootLayout({
 
        <head>
         <script src="https://accounts.google.com/gsi/client" async defer></script>
-
+        {/* Tetr Fonts */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @font-face {
+              font-family: 'Aeonik-regular';
+              src: url('https://cdn.tetr.com/assets/fonts/Aeonik-Regular.woff2') format('woff2');
+              font-weight: 400;
+              font-style: normal;
+              font-display: swap;
+            }
+            @font-face {
+              font-family: 'Aeonik-medium';
+              src: url('https://cdn.tetr.com/assets/fonts/Aeonik-Medium.woff2') format('woff2');
+              font-weight: 500;
+              font-style: normal;
+              font-display: swap;
+            }
+            @font-face {
+              font-family: 'Aeonik-bold';
+              src: url('https://cdn.tetr.com/assets/fonts/Aeonik-Bold.woff2') format('woff2');
+              font-weight: 700;
+              font-style: normal;
+              font-display: swap;
+            }
+            @font-face {
+              font-family: 'plexRegular';
+              src: url('https://cdn.tetr.com/assets/fonts/IBMPlex-Regular.woff2') format('woff2');
+              font-weight: 400;
+              font-style: normal;
+              font-display: swap;
+            }
+            @font-face {
+              font-family: 'plexMedium';
+              src: url('https://cdn.tetr.com/assets/fonts/IBMPlex-Medium.woff2') format('woff2');
+              font-weight: 500;
+              font-style: normal;
+              font-display: swap;
+            }
+            @font-face {
+              font-family: 'plexSemiBold';
+              src: url('https://cdn.tetr.com/assets/fonts/IBMPlex-SemiBold.woff2') format('woff2');
+              font-weight: 600;
+              font-style: normal;
+              font-display: swap;
+            }
+            @font-face {
+              font-family: 'plexBold';
+              src: url('https://cdn.tetr.com/assets/fonts/IBMPlex-Bold.woff2') format('woff2');
+              font-weight: 700;
+              font-style: normal;
+              font-display: swap;
+            }
+          `
+        }} />
       </head>
 
 

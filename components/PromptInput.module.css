@@ -497,6 +497,178 @@
   }
 }
 
+/* Tetr Theme Styles for Textarea and Button */
+:global([data-theme="tetr"]) .textarea {
+  background: #F3F7E1 !important;
+  border: 1px solid #E5E5E5 !important;
+  color: #004822 !important;
+  font-family: 'plexRegular', sans-serif !important;
+  -webkit-text-fill-color: #004822 !important;
+  caret-color: #004822 !important;
+}
+
+:global([data-theme="tetr"]) .textarea::-webkit-input-placeholder {
+  color: #737373 !important;
+  -webkit-text-fill-color: #737373 !important;
+}
+
+:global([data-theme="tetr"]) .textarea:-moz-placeholder {
+  color: #737373 !important;
+}
+
+:global([data-theme="tetr"]) .textarea::-moz-placeholder {
+  color: #737373 !important;
+}
+
+:global([data-theme="tetr"]) .textarea:-ms-input-placeholder {
+  color: #737373 !important;
+}
+
+:global([data-theme="tetr"]) .textarea::placeholder {
+  color: #737373 !important;
+  -webkit-text-fill-color: #737373 !important;
+}
+
+:global([data-theme="tetr"]) .textarea:focus {
+  border-color: #F0C300 !important;
+  background: #F3F7E1 !important;
+  box-shadow: 0 0 0 3px rgba(240, 195, 0, 0.1) !important;
+  color: #004822 !important;
+  -webkit-text-fill-color: #004822 !important;
+}
+
+:global([data-theme="tetr"]) .textarea::-webkit-scrollbar-thumb {
+  background: rgba(0, 72, 34, 0.15);
+}
+
+:global([data-theme="tetr"]) .textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 72, 34, 0.25);
+}
+
+:global([data-theme="tetr"]) .textarea::-webkit-scrollbar-thumb:active {
+  background: rgba(240, 195, 0, 0.4);
+}
+
+:global([data-theme="tetr"]) .buttonWrapper {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+}
+
+:global([data-theme="tetr"]) .buttonWrapper::before {
+  display: none !important;
+}
+
+:global([data-theme="tetr"]) .generateButton {
+  display: flex !important;
+  padding: 14px 24px !important;
+  align-items: center !important;
+  gap: 8px !important;
+  max-width: max-content !important;
+  border-radius: 4px !important;
+  background: #F0C300 !important;
+  font-size: 13px !important;
+  font-family: 'plexSemiBold', sans-serif !important;
+  font-weight: 600 !important;
+  line-height: 120% !important;
+  color: #090909 !important;
+  cursor: pointer !important;
+  transition: 0.3s ease !important;
+  border: none !important;
+  text-decoration: none !important;
+  position: relative !important;
+  width: auto !important;
+  white-space: nowrap !important;
+}
+
+:global([data-theme="tetr"]) .generateButton::after {
+  display: none !important;
+}
+
+:global([data-theme="tetr"]) .buttonWrapper:hover:not(.buttonWrapperDisabled) .generateButton,
+:global([data-theme="tetr"]) .buttonWrapper.active:not(.buttonWrapperDisabled) .generateButton {
+  color: #090909 !important;
+  background: #F0C300 !important;
+  opacity: 0.9 !important;
+}
+
+:global([data-theme="tetr"]) .buttonWrapper:hover:not(.buttonWrapperDisabled) .generateButton svg path,
+:global([data-theme="tetr"]) .buttonWrapper.active:not(.buttonWrapperDisabled) .generateButton svg path {
+  stroke: #090909 !important;
+}
+
+:global([data-theme="tetr"]) .generateButton:disabled {
+  background: #D4D4D4 !important;
+  color: #737373 !important;
+}
+
+:global([data-theme="tetr"]) .buttonWrapperDisabled .generateButton {
+  background: #D4D4D4 !important;
+  color: #737373 !important;
+}
+
+:global([data-theme="tetr"]) .buttonWrapperDisabled {
+  border: 1px solid #E5E5E5;
+}
+
+:global([data-theme="tetr"]) .buttonWrapperDisabled .generateButton svg path {
+  stroke: #737373 !important;
+}
+
+:global([data-theme="tetr"]) .themeLabel {
+  color: #090909;
+  font-family: 'plexMedium', sans-serif;
+}
+
+:global([data-theme="tetr"]) .themeButton {
+  background: #ffffff;
+  border: 1px solid #E5E5E5;
+  color: #090909;
+  font-family: 'plexMedium', sans-serif;
+}
+
+:global([data-theme="tetr"]) .themeButton:hover:not(:disabled) {
+  border-color: #F0C300;
+}
+
+:global([data-theme="tetr"]) .themeButtonActive {
+  border-color: #F0C300 !important;
+  background: rgba(240, 195, 0, 0.1) !important;
+  color: #F0C300 !important;
+}
+
+:global([data-theme="tetr"]) .arrowButton {
+  background: #ffffff;
+  color: #090909;
+  border: 1px solid #E5E5E5;
+}
+
+:global([data-theme="tetr"]) .arrowButton:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(9, 9, 9, 0.1);
+}
+
+:global([data-theme="tetr"]) .arrowButton:disabled {
+  background: #D4D4D4;
+  color: #737373;
+  border-color: #E5E5E5;
+}
+
+:global([data-theme="tetr"]) .imageUploadButton {
+  background: #ffffff;
+  color: #090909;
+  border: 1px solid #E5E5E5;
+}
+
+:global([data-theme="tetr"]) .imageUploadButton:hover {
+  box-shadow: 0 4px 12px rgba(9, 9, 9, 0.1);
+}
+
+:global([data-theme="tetr"]) .imagePreview {
+  border: 1px solid #E5E5E5;
+  background: #ffffff;
+}
+
 @media (max-width: 767px) {
   .themeSelector {
     flex-direction: column;

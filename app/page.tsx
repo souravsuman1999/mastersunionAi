@@ -533,7 +533,7 @@ useEffect(() => {
 
   
   return (
-  <div className={styles.container}>
+  <div className={`${styles.container} ${selectedTheme === "tetr" ? styles.tetrTheme : ""}`} data-theme={selectedTheme}>
     <main className={styles.main}>
 
       {/* Left Sidebar: History + Prompt Input */}
@@ -620,8 +620,10 @@ useEffect(() => {
             <div className={styles.mucontentdiv}>
               <div className={styles.muLogoAnimation}>
                 <img loading="lazy"
-                  src="https://files.mastersunion.link/resources/animateds/logoanimationblack.gif"
-                  alt="MU Logo"
+                  src={selectedTheme === "tetr" 
+                    ? "https://cdn.tetr.com/assets/ih-images/V2/newTetrLogoBrand.svg"
+                    : "https://files.mastersunion.link/resources/animateds/logoanimationblack.gif"}
+                  alt={selectedTheme === "tetr" ? "Tetr Logo" : "MU Logo"}
                 />
               </div>
               <h1 className={styles.gradientText}>

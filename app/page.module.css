@@ -18,6 +18,7 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 10px;
+  height: 62px;
 
   img{
     max-width: 20%;
@@ -61,6 +62,113 @@
   background-clip: text;
   font-family: var(--go-extrabold);
   font-weight: 800;
+}
+
+/* Tetr Theme Styles - Using Tetr Design System Colors and Fonts Only */
+.tetrTheme {
+  background: #ffffff !important;
+  color: #090909;
+  font-family: 'plexRegular', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.tetrTheme * {
+  font-family: 'plexRegular', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.tetrTheme .aiGenrate {
+  background: #ffffff;
+}
+
+.tetrTheme .container {
+  background: #ffffff;
+}
+
+.tetrTheme .previewSection {
+  background: #ffffff;
+}
+
+.tetrTheme .gradientText {
+  background: #004822;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-family: 'Aeonik-bold', 'plexBold', sans-serif;
+  font-weight: 700;
+}
+
+.tetrTheme .gradientText span {
+  font-family: 'Aeonik-bold', 'plexBold', sans-serif;
+  font-weight: 700;
+}
+
+.tetrTheme .aiGenrateSubtitle {
+  color: #737373;
+  font-family: 'plexRegular', sans-serif;
+}
+
+.tetrTheme .promptSection {
+  background: rgba(255, 255, 255, 0.95);
+  border-right: 1px solid #E5E5E5;
+}
+
+.tetrTheme .promptTitle,
+.tetrTheme .historyTitle {
+  color: #090909;
+  font-family: 'plexRegular', sans-serif;
+}
+
+.tetrTheme .promptEyebrow {
+  color: #090909;
+  font-family: 'plexMedium', sans-serif;
+}
+
+.tetrTheme .historyHeader {
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.tetrTheme .versionItem {
+  background: #ffffff;
+  border: 1px solid #E5E5E5;
+  color: #090909;
+  font-family: 'plexRegular', sans-serif;
+}
+
+.tetrTheme .versionItem:hover {
+  background: #F5F5F5;
+  border-color: #F0C300;
+}
+
+.tetrTheme .versionItemActive {
+  border-color: #F0C300;
+  background: rgba(240, 195, 0, 0.08);
+  box-shadow: 0 0 24px rgba(240, 195, 0, 0.12);
+}
+
+.tetrTheme .versionPrompt {
+  color: #737373;
+  font-family: 'plexRegular', sans-serif;
+}
+
+.tetrTheme .versionTimestamp {
+  color: #737373;
+  font-family: 'plexRegular', sans-serif;
+}
+
+.tetrTheme .versionTitle {
+  color: #737373;
+  font-family: 'plexRegular', sans-serif;
+}
+
+.tetrTheme .historyEmpty {
+  border: 1px dashed rgba(9, 9, 9, 0.2);
+  color: rgba(9, 9, 9, 0.7);
+  background: rgba(9, 9, 9, 0.02);
+  font-family: 'plexRegular', sans-serif;
+}
+
+.tetrTheme .historyActiveLabel {
+  color: #F0C300;
+  font-family: 'plexMedium', sans-serif;
 }
 
 .gradientText span {
