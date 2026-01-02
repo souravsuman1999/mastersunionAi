@@ -1072,6 +1072,15 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     // This prevents iframe reload while editing
     if (!isEditMode) {
       setIframeReady(false)
+      // Check if iframe is already loaded and set ready immediately
+      const iframe = iframeRef.current
+      if (iframe && displayHtml) {
+        const doc = getIframeDocument(iframe)
+        if (doc && doc.head && doc.body) {
+          // Iframe is already loaded, set ready immediately
+          setTimeout(() => setIframeReady(true), 100)
+        }
+      }
     }
   }, [displayHtml, isEditMode])
 
@@ -1144,17 +1153,31 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
     checkReady()
 
+    // Fallback: Set iframe ready after a reasonable timeout if load event doesn't fire
+    const fallbackTimeout = setTimeout(() => {
+      const doc = getIframeDocument(iframe)
+      if (doc && doc.head && doc.body) {
+        console.log("[Preview] Fallback: Setting iframe ready after timeout")
+        setIframeReady(true)
+      }
+    }, 2000) // 2 second fallback
+
     // Re-setup handlers when HTML changes
     const intervalId = setInterval(() => {
       const doc = getIframeDocument(iframe)
       if (doc && doc.body) {
         setupPlayButtonHandlers(doc)
+        // Also check if iframe is ready but state wasn't set
+        if (!iframeReady && doc.head) {
+          setIframeReady(true)
+        }
       }
     }, 1000)
 
     return () => {
       iframe.removeEventListener("load", handleLoad)
       clearInterval(intervalId)
+      clearTimeout(fallbackTimeout)
     }
   }, [displayHtml])
 

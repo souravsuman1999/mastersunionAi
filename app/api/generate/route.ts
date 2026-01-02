@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getDesignSystemPrompt } from "@/config/design-system"
+import { getDesignSystemPrompt, getTetrDesignSystemPrompt } from "@/config/design-system"
 
-async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageData?: string): Promise<string> {
+async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageData?: string, theme: "mastersunion" | "tetr" = "mastersunion"): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not set")
@@ -19,7 +19,7 @@ async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageD
     console.warn("[v0] Warning: API key format may be incorrect. Anthropic API keys typically start with 'sk-ant-'")
   }
 
-  const designSystemPrompt = getDesignSystemPrompt()
+  const designSystemPrompt = theme === "tetr" ? getTetrDesignSystemPrompt() : getDesignSystemPrompt()
   const hasBaseHtml = typeof baseHtml === "string" && baseHtml.trim().length > 0
 
   const systemPrompt = `You are an expert web developer. Generate complete, valid HTML pages based on user requests.
@@ -41,8 +41,10 @@ IMPORTANT OUTPUT RULES:
 
 Create beautiful, functional webpages with good typography, spacing, and visual hierarchy while strictly following the design system.`
 
+  const startTime = Date.now()
   console.log("[v0] Calling Claude API with model: claude-sonnet-4-5")
   console.log("[v0] Generation mode:", hasBaseHtml ? "edit-existing" : "create-new")
+  console.log("[v0] Design system prompt length:", designSystemPrompt.length)
   if (hasBaseHtml) {
     console.log("[v0] Base HTML length:", baseHtml?.length ?? 0)
   }
@@ -98,55 +100,66 @@ Return the complete updated HTML document (including <!DOCTYPE>, <html>, <head>,
     text: editAwarePrompt,
   })
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-5",
-      max_tokens: 18000,
-      messages: [
-        {
-          role: "user",
-          content: content,
-        },
-      ],
-      system: systemPrompt,
-    }),
-  })
+  // Create AbortController for timeout
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    let errorData
-    try {
-      errorData = JSON.parse(errorText)
-    } catch {
-      errorData = { error: { message: errorText } }
-    }
-    
-    console.error("[v0] Anthropic API error:", {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorData,
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-5",
+        max_tokens: 12000, // Reduced from 18000 for faster generation
+        messages: [
+          {
+            role: "user",
+            content: content,
+          },
+        ],
+        system: systemPrompt,
+      }),
+      signal: controller.signal,
     })
-    
-    if (response.status === 401) {
-      const errorMessage = errorData?.error?.message || "Invalid API key"
-      throw new Error(
-        `401 Unauthorized: ${errorMessage}. ` +
-        "Please verify your ANTHROPIC_API_KEY is correct and set in Vercel environment variables. " +
-        "Make sure to redeploy after adding the variable."
-      )
-    }
-    
-    throw new Error(`Claude API error: ${response.status} ${response.statusText}`)
-  }
+    clearTimeout(timeoutId)
 
-  const data = await response.json()
-  console.log("[v0] Claude API response received successfully")
+    if (!response.ok) {
+      clearTimeout(timeoutId)
+      const errorText = await response.text()
+      let errorData
+      try {
+        errorData = JSON.parse(errorText)
+      } catch {
+        errorData = { error: { message: errorText } }
+      }
+      
+      console.error("[v0] Anthropic API error:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+      })
+      
+      if (response.status === 401) {
+        const errorMessage = errorData?.error?.message || "Invalid API key"
+        throw new Error(
+          `401 Unauthorized: ${errorMessage}. ` +
+          "Please verify your ANTHROPIC_API_KEY is correct and set in Vercel environment variables. " +
+          "Make sure to redeploy after adding the variable."
+        )
+      }
+      
+      throw new Error(`Claude API error: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    clearTimeout(timeoutId)
+    const duration = Date.now() - startTime
+    console.log("[v0] Claude API response received successfully")
+    console.log("[v0] Generation took:", duration, "ms (", (duration / 1000).toFixed(2), "seconds)")
 
   const textSegments: string[] = Array.isArray(data?.content)
     ? data.content
@@ -166,18 +179,27 @@ Return the complete updated HTML document (including <!DOCTYPE>, <html>, <head>,
     html = html.replace(/^```\n/, "").replace(/\n```$/, "")
   }
 
-  return html
+    return html
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error("Request timeout: Generation took too long. Please try again with a simpler prompt.")
+    }
+    throw error
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
     console.log("[v0] API route called")
     const body = await request.json()
-    const { prompt, baseHtml, imageData } = body
+    const { prompt, baseHtml, imageData, theme } = body
 
     if (!prompt && !imageData) {
       return NextResponse.json({ error: "Missing prompt or image" }, { status: 400 })
     }
+
+    const selectedTheme = theme === "tetr" ? "tetr" : "mastersunion"
 
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
     if (!apiKey) {
@@ -194,10 +216,11 @@ export async function POST(request: NextRequest) {
     console.log("[v0] API key found in environment, length:", apiKey.length)
 
     console.log("[v0] Generating webpage with prompt:", prompt?.substring(0, 50) + "..." || "[Image only]")
+    console.log("[v0] Using theme:", selectedTheme)
     if (imageData) {
       console.log("[v0] Image data provided, length:", imageData.length)
     }
-    const html = await generateWebpageOnServer(prompt || "", baseHtml, imageData)
+    const html = await generateWebpageOnServer(prompt || "", baseHtml, imageData, selectedTheme)
 
     console.log("[v0] Webpage generated successfully")
     return NextResponse.json({ html })

@@ -296,6 +296,7 @@ type PromptVersion = {
   html: string
   createdAt: string
   versionNumber: number
+  theme?: "mastersunion" | "tetr"
 }
 
 const timestampFormatter = new Intl.DateTimeFormat("en-US", {
@@ -321,6 +322,7 @@ export default function Home() {
   const [versionCounter, setVersionCounter] = useState(0)
   const [isPreviewEditMode, setIsPreviewEditMode] = useState(false)
   const [hasRestoredState, setHasRestoredState] = useState(false)
+  const [selectedTheme, setSelectedTheme] = useState<"mastersunion" | "tetr">("mastersunion")
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("mu_auth") === "true";
@@ -426,10 +428,18 @@ useEffect(() => {
     setError("")
     setCurrentPrompt(prompt)
 
-    const payload: { prompt: string; baseHtml?: string; imageData?: string } = { prompt }
+    const payload: { prompt: string; baseHtml?: string; imageData?: string; theme?: "mastersunion" | "tetr" } = { prompt, theme: selectedTheme }
     const latestVersion = versions.length > 0 ? versions[0] : null
-    const baseHtmlCandidate = latestVersion?.html ?? generatedHtml
-    if (baseHtmlCandidate?.trim()) payload.baseHtml = baseHtmlCandidate
+    // Only use baseHtml if the latest version has the same theme
+    let baseHtmlCandidate: string | null = null
+    if (latestVersion?.theme === selectedTheme && latestVersion?.html) {
+      baseHtmlCandidate = latestVersion.html
+    } else if (generatedHtml) {
+      baseHtmlCandidate = generatedHtml
+    }
+    if (baseHtmlCandidate && typeof baseHtmlCandidate === 'string' && baseHtmlCandidate.trim()) {
+      payload.baseHtml = baseHtmlCandidate
+    }
     if (imageData) payload.imageData = imageData
 
     try {
@@ -457,6 +467,7 @@ useEffect(() => {
           prompt,
           html: data.html,
           versionNumber: nextVersionNumber,
+          theme: selectedTheme,
         }),
       })
 
@@ -481,6 +492,11 @@ useEffect(() => {
   setSelectedVersionId(versionId)
   setGeneratedHtml(version.html)
   setHasGenerated(true)
+  
+  // Set theme from version if available, otherwise keep current theme
+  if (version.theme) {
+    setSelectedTheme(version.theme)
+  }
 
   // Reset sidebar input when selecting history
   setCurrentPrompt("")
@@ -550,6 +566,21 @@ useEffect(() => {
                       {formatTimestamp(version.createdAt)}
                     </span>
                   </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    {version.theme && (
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: version.theme === 'mastersunion' ? 'rgba(57, 181, 215, 0.2)' : 'rgba(240, 195, 0, 0.2)',
+                        color: version.theme === 'mastersunion' ? '#39B5D7' : '#F0C300',
+                        textTransform: 'capitalize',
+                        fontWeight: 500
+                      }}>
+                        {version.theme === 'mastersunion' ? 'Masters Union' : 'Tetr'}
+                      </span>
+                    )}
+                  </div>
                   <p className={styles.versionPrompt}>{version.prompt}</p>
                 </button>
               ))
@@ -566,6 +597,8 @@ useEffect(() => {
                 onPromptChange={setCurrentPrompt}
                 isReadOnly={isPreviewEditMode}
                 variant="sidebar"
+                selectedTheme={selectedTheme}
+                onThemeChange={setSelectedTheme}
               />
             )}
 
@@ -609,6 +642,8 @@ useEffect(() => {
                 onPromptChange={setCurrentPrompt}
                 isReadOnly={isPreviewEditMode}
                 variant="hero"
+                selectedTheme={selectedTheme}
+                onThemeChange={setSelectedTheme}
               />
             </div>
 

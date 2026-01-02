@@ -12,6 +12,8 @@ interface PromptInputProps {
   error?: string
   isReadOnly?: boolean
   variant?: "hero" | "sidebar"
+  selectedTheme?: "mastersunion" | "tetr"
+  onThemeChange?: (theme: "mastersunion" | "tetr") => void
 }
 
 export default function PromptInput({
@@ -22,6 +24,8 @@ export default function PromptInput({
   error,
   isReadOnly,
   variant = "hero",
+  selectedTheme = "mastersunion",
+  onThemeChange,
 }: PromptInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -81,6 +85,30 @@ export default function PromptInput({
 
   return (
     <div className={styles.container}>
+      {/* Theme Selector - Only show in hero variant, not in sidebar */}
+      {onThemeChange && isHero && (
+        <div className={styles.themeSelector}>
+          <label className={styles.themeLabel}>Theme:</label>
+          <div className={styles.themeButtons}>
+            <button
+              type="button"
+              onClick={() => onThemeChange("mastersunion")}
+              className={`${styles.themeButton} ${selectedTheme === "mastersunion" ? styles.themeButtonActive : ''}`}
+              disabled={isLoading || isReadOnly}
+            >
+              Masters Union
+            </button>
+            <button
+              type="button"
+              onClick={() => onThemeChange("tetr")}
+              className={`${styles.themeButton} ${selectedTheme === "tetr" ? styles.themeButtonActive : ''}`}
+              disabled={isLoading || isReadOnly}
+            >
+              Tetr
+            </button>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={`${styles.inputWrapper} ${isHero ? styles.inputWrapperHero : ''}`}>
           {imagePreview && (
