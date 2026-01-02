@@ -1,6 +1,10 @@
 // app/lib/design-system-prompt.ts
 
-export function getDesignSystemPrompt() {
+import { getTetrDesignSystemPrompt } from "./tetr-design-system"
+
+type Theme = "masters-union" | "tetr"
+
+function getMastersUnionDesignSystemPrompt(): string {
   return `
 You are an expert Frontend Developer.
 You generate pixel-perfect HTML + CSS + JavaScript for Masters' Union.
@@ -2150,6 +2154,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 IMPORTANT: You MUST implement either tabs (with categories) or infinite marquee (without categories) for ALL masters sections. There is no alternative - this is mandatory.
 */
-  `;
+  `
+}
+
+export function getDesignSystemPrompt(theme: Theme = "masters-union") {
+  // Normalize theme to ensure exact match
+  const normalizedTheme = (theme === "tetr" ? "tetr" : "masters-union") as Theme
+  console.log("[Design System] Theme requested:", theme, "-> Normalized:", normalizedTheme)
+  
+  if (normalizedTheme === "tetr") {
+    console.log("[Design System] Returning TETR design system")
+    return getTetrDesignSystemPrompt()
+  }
+  console.log("[Design System] Returning Masters Union design system")
+  return getMastersUnionDesignSystemPrompt()
 }
  

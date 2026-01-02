@@ -288,6 +288,7 @@ import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
 import styles from "./page.module.css"
 import ProfileMenu from "@/components/ProfileMenu"
+import ThemeSelector from "@/components/ThemeSelector"
 
 
 type PromptVersion = {
@@ -426,7 +427,12 @@ useEffect(() => {
     setError("")
     setCurrentPrompt(prompt)
 
-    const payload: { prompt: string; baseHtml?: string; imageData?: string } = { prompt }
+    // Read and normalize theme from localStorage
+    const savedTheme = localStorage.getItem("app_theme")
+    const currentTheme = (savedTheme === "tetr" ? "tetr" : "masters-union") as "masters-union" | "tetr"
+    console.log("[Client] Theme from localStorage:", savedTheme, "-> Normalized to:", currentTheme)
+    console.log("[Client] Sending theme to API:", currentTheme)
+    const payload: { prompt: string; baseHtml?: string; imageData?: string; theme?: "masters-union" | "tetr" } = { prompt, theme: currentTheme }
     const latestVersion = versions.length > 0 ? versions[0] : null
     const baseHtmlCandidate = latestVersion?.html ?? generatedHtml
     if (baseHtmlCandidate?.trim()) payload.baseHtml = baseHtmlCandidate
@@ -527,6 +533,9 @@ useEffect(() => {
       {/* Left Sidebar: History + Prompt Input */}
       <section className={styles.promptSection}>
         <div className={styles.promptSectionInner}>
+          <div className={styles.themeSelectorWrapper}>
+            <ThemeSelector />
+          </div>
           
           <div className={styles.historyHeader}>
             <p className={styles.promptEyebrow}>History</p>

@@ -1,0 +1,56 @@
+.themeSelector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.themeButton {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--grey10);
+  font-size: 13px;
+  font-family: var(--go-medium);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.themeButton:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.themeButton.active {
+  background: var(--white);
+  color: var(--black);
+  font-weight: 500;
+}
+
+/* TETR Theme Styles */
+:global([data-theme="tetr"]) .themeSelector {
+  background: var(--white-2, #fcfdf7);
+  border: 1px solid var(--headerBorder, #1c291a33);
+}
+
+:global([data-theme="tetr"]) .themeButton {
+  color: var(--greyDark, #727B6A);
+  font-family: var(--font-medium, 'plexMedium');
+}
+
+:global([data-theme="tetr"]) .themeButton:hover {
+  color: var(--main-black, #1c291a);
+  background: var(--grey, #f3f7e1a6);
+}
+
+:global([data-theme="tetr"]) .themeButton.active {
+  background: var(--base-yellow, #F0C300);
+  color: var(--base-black, #090909);
+  font-family: var(--font-bold, 'plexBold');
+}
+

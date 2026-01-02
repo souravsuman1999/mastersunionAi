@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDesignSystemPrompt } from "@/config/design-system"
 
-async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageData?: string): Promise<string> {
+async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageData?: string, theme: "masters-union" | "tetr" = "masters-union"): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
   if (!apiKey) {
     throw new Error("ANTHROPIC_API_KEY is not set")
@@ -19,7 +19,10 @@ async function generateWebpageOnServer(prompt: string, baseHtml?: string, imageD
     console.warn("[v0] Warning: API key format may be incorrect. Anthropic API keys typically start with 'sk-ant-'")
   }
 
-  const designSystemPrompt = getDesignSystemPrompt()
+  // Ensure theme is exactly "tetr" or "masters-union"
+  const normalizedTheme = (theme === "tetr" ? "tetr" : "masters-union") as "masters-union" | "tetr"
+  console.log("[v0] Using theme:", normalizedTheme, "(original:", theme, ")")
+  const designSystemPrompt = getDesignSystemPrompt(normalizedTheme)
   const hasBaseHtml = typeof baseHtml === "string" && baseHtml.trim().length > 0
 
   const systemPrompt = `You are an expert web developer. Generate complete, valid HTML pages based on user requests.
@@ -173,7 +176,11 @@ export async function POST(request: NextRequest) {
   try {
     console.log("[v0] API route called")
     const body = await request.json()
-    const { prompt, baseHtml, imageData } = body
+    const { prompt, baseHtml, imageData, theme } = body
+    
+    // Normalize theme value to ensure it matches exactly
+    const normalizedTheme = (theme === "tetr" ? "tetr" : "masters-union") as "masters-union" | "tetr"
+    console.log("[v0] Theme received:", theme, "-> Normalized to:", normalizedTheme)
 
     if (!prompt && !imageData) {
       return NextResponse.json({ error: "Missing prompt or image" }, { status: 400 })
@@ -197,7 +204,7 @@ export async function POST(request: NextRequest) {
     if (imageData) {
       console.log("[v0] Image data provided, length:", imageData.length)
     }
-    const html = await generateWebpageOnServer(prompt || "", baseHtml, imageData)
+    const html = await generateWebpageOnServer(prompt || "", baseHtml, imageData, normalizedTheme)
 
     console.log("[v0] Webpage generated successfully")
     return NextResponse.json({ html })

@@ -371,3 +371,165 @@ textarea {
   background: rgba(250, 209, 51, 0.4);
 }
 
+/* ============================================
+   TETR THEME STYLES
+   ============================================ */
+
+/* TETR Font Faces */
+@font-face {
+  font-family: 'Aeonik-regular';
+  src: url('https://cdn.tetr.com/assets/fonts/Aeonik-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aeonik-medium';
+  src: url('https://cdn.tetr.com/assets/fonts/Aeonik-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aeonik-bold';
+  src: url('https://cdn.tetr.com/assets/fonts/Aeonik-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'plexRegular';
+  src: url('https://cdn.tetr.com/assets/fonts/IBMPlex-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'plexMedium';
+  src: url('https://cdn.tetr.com/assets/fonts/IBMPlex-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'plexSemiBold';
+  src: url('https://cdn.tetr.com/assets/fonts/IBMPlex-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'plexBold';
+  src: url('https://cdn.tetr.com/assets/fonts/IBMPlex-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* TETR Theme Variables and Base Styles */
+[data-theme="tetr"] {
+  /* TETR fonts */
+  --font-regular: 'plexRegular';
+  --font-medium: 'plexMedium';
+  --font-semi-bold: 'plexSemiBold';
+  --font-bold: 'plexBold';
+
+  /* TETR colors */
+  --primary-60: #1c291a99;
+  --white-2: #fcfdf7;
+  --cream: #F3F7E1;
+  --cream-1: #fafcf3;
+  --headerBorder: #1c291a33;
+  --orange: #ff7a00;
+  --grey: #f3f7e1a6;
+  --main-black: #1c291a;
+  --tranparent: #fff0;
+  --white: white;
+  --main-black-90: #1c291ae6;
+  --green: #b8ef43;
+  --h-farm-blue: #0b1651;
+  --yellow: #fbc91b;
+  --sub-heading: #f7faeb;
+  --light-green: #e3f9b4;
+  --bottom-border-light: #3e4b41a8;
+  --cream-2: #FBFDF6;
+  --brown: #1f2c1d;
+  --greyDark: #727B6A;
+  --grey50: #737373;
+
+  /* TETR branding colors */
+  --base-dark-green: #004822;
+  --base-light-green: #009C50;
+  --base-pink: #F8769A;
+  --base-cyan: #4CC9E9;
+  --base-yellow: #F0C300;
+  --base-purple: #9C2AB5;
+  --base-black: #090909;
+  --border-bottom: #E5E5E5;
+}
+
+/* TETR Body and HTML Styles */
+[data-theme="tetr"] html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+[data-theme="tetr"] body {
+  position: relative;
+  font-family: var(--font-regular);
+  background: var(--white-2);
+  color: var(--base-black);
+}
+
+[data-theme="tetr"] #__next {
+  background: var(--white-2);
+}
+
+/* TETR Scrollbar Styles */
+[data-theme="tetr"] * {
+  scrollbar-width: thin;
+  scrollbar-color: #b9b2b2 #f5f5f5;
+}
+
+[data-theme="tetr"] *::-webkit-scrollbar {
+  width: 6px;
+}
+
+[data-theme="tetr"] *::-webkit-scrollbar-track {
+  background-color: #f5f5f5;
+  border-radius: 10px;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="tetr"] *::-webkit-scrollbar-thumb {
+  background-color: #b9b2b2;
+  border-radius: 10px;
+}
+
+[data-theme="tetr"] *::-webkit-scrollbar-thumb:hover {
+  background-color: #878887;
+  border-radius: 10px;
+}
+
+[data-theme="tetr"] [contenteditable="true"],
+[data-theme="tetr"] input,
+[data-theme="tetr"] textarea {
+  caret-color: var(--base-black);
+}
+
+[data-theme="tetr"] button {
+  font-family: var(--font-regular);
+}
+
+[data-theme="tetr"] input,
+[data-theme="tetr"] textarea,
+[data-theme="tetr"] select {
+  font-family: var(--font-regular);
+}
+
