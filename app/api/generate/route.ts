@@ -114,7 +114,7 @@ Return the complete updated HTML document (including <!DOCTYPE>, <html>, <head>,
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
-        max_tokens: 12000, // Reduced from 18000 for faster generation
+        max_tokens: 18000, // Reduced from 18000 for faster generation
         messages: [
           {
             role: "user",

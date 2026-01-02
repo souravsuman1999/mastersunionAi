@@ -29,8 +29,9 @@ export default function PromptInput({
 }: PromptInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [imageData, setImageData] = useState<string | null>(null)
+  const inputWrapperRef = useRef<HTMLDivElement>(null)
+  const [images, setImages] = useState<string[]>([])
+  const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
     const textarea = textareaRef.current
@@ -40,34 +41,90 @@ export default function PromptInput({
     textarea.style.height = `${textarea.scrollHeight}px`
   }, [value])
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const processFiles = (files: FileList | File[]) => {
+    const fileArray = Array.from(files)
+    const validFiles: File[] = []
+    const errors: string[] = []
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file")
-      return
+    fileArray.forEach((file) => {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        errors.push(`${file.name} is not an image file`)
+        return
+      }
+
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        errors.push(`${file.name} is larger than 10MB`)
+        return
+      }
+
+      validFiles.push(file)
+    })
+
+    if (errors.length > 0) {
+      alert(errors.join("\n"))
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Image size should be less than 10MB")
-      return
-    }
+    if (validFiles.length === 0) return
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const result = reader.result as string
-      setImagePreview(result)
-      setImageData(result)
-    }
-    reader.readAsDataURL(file)
+    const readers = validFiles.map((file) => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          resolve(reader.result as string)
+        }
+        reader.readAsDataURL(file)
+      })
+    })
+
+    Promise.all(readers).then((results) => {
+      setImages((prev) => [...prev, ...results])
+    })
   }
 
-  const handleRemoveImage = () => {
-    setImagePreview(null)
-    setImageData(null)
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    processFiles(files)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isHero && !isLoading && !isReadOnly) {
+      setIsDragging(true)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    if (!isHero || isLoading || isReadOnly) return
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      processFiles(files)
+    }
+  }
+
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index))
+    if (fileInputRef.current && images.length === 1) {
+      fileInputRef.current.value = ""
+    }
+  }
+
+  const handleRemoveAllImages = () => {
+    setImages([])
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -75,8 +132,9 @@ export default function PromptInput({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (value.trim() || imageData) {
-      onGenerate(value, imageData || undefined)
+    if (value.trim() || images.length > 0) {
+      // Pass the first image for now (API expects single image)
+      onGenerate(value, images.length > 0 ? images[0] : undefined)
     }
   }
 
@@ -110,14 +168,25 @@ export default function PromptInput({
         </div>
       )}
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={`${styles.inputWrapper} ${isHero ? styles.inputWrapperHero : ''}`}>
-          {imagePreview && (
+        <div
+          ref={inputWrapperRef}
+          className={`${styles.inputWrapper} ${isHero ? styles.inputWrapperHero : ''} ${isHero && isDragging ? styles.dragOver : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {images.length > 0 && (
             <div className={styles.imagePreviewContainer}>
               <div className={styles.imagePreview}>
-                <img src={imagePreview} alt="Preview" />
+                <img src={images[0]} alt="Preview" />
+                {images.length > 2 && (
+                  <div className={styles.imageCountBadge}>
+                    +{images.length - 1}
+                  </div>
+                )}
                 <button
                   type="button"
-                  onClick={handleRemoveImage}
+                  onClick={handleRemoveAllImages}
                   className={styles.removeImageButton}
                   disabled={isLoading || isReadOnly}
                 >
@@ -128,9 +197,19 @@ export default function PromptInput({
               </div>
             </div>
           )}
+          {isHero && isDragging && (
+            <div className={styles.dragOverlay}>
+              <div className={styles.dragOverlayContent}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <p>Drop images here</p>
+              </div>
+            </div>
+          )}
           <textarea
             ref={textareaRef}
-            className={`${styles.textarea} ${isSidebar ? styles.textareaSidebar : ''} ${isHero ? styles.textareaHero : ''} ${imagePreview ? styles.textareaWithImage : ''}`}
+            className={`${styles.textarea} ${isSidebar ? styles.textareaSidebar : ''} ${isHero ? styles.textareaHero : ''} ${images.length > 0 ? styles.textareaWithImage : ''}`}
             value={value}
             onChange={(e) => onPromptChange(e.target.value)}
             placeholder="Describe the page you want to generate... (e.g., 'Create a landing page for a tech startup with hero section, features, and contact form')"
@@ -147,6 +226,7 @@ export default function PromptInput({
             ref={fileInputRef}
             type="file"
             accept="image/*"
+            multiple={isHero}
             onChange={handleImageChange}
             className={styles.fileInput}
             id="image-upload"
@@ -162,7 +242,7 @@ export default function PromptInput({
               <button
                 type="submit"
                 className={styles.arrowButton}
-                disabled={isLoading || (!value.trim() && !imageData) || !!isReadOnly}
+                disabled={isLoading || (!value.trim() && images.length === 0) || !!isReadOnly}
               >
                 {isLoading ? (
                   <div className={styles.spinner} />
@@ -177,11 +257,11 @@ export default function PromptInput({
         </div>
         {isHero && (
           <div className={styles.buttonContainerHero}>
-            <div className={`${styles.buttonWrapper} ${(isLoading || (!value.trim() && !imageData) || !!isReadOnly) ? styles.buttonWrapperDisabled : ''}`}>
+            <div className={`${styles.buttonWrapper} ${(isLoading || (!value.trim() && images.length === 0) || !!isReadOnly) ? styles.buttonWrapperDisabled : ''}`}>
               <button
                 type="submit"
                 className={styles.generateButton}
-                disabled={isLoading || (!value.trim() && !imageData) || !!isReadOnly}
+                disabled={isLoading || (!value.trim() && images.length === 0) || !!isReadOnly}
               >
                 {isLoading ? (
                   <div className={styles.spinner} />

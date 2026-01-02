@@ -364,11 +364,21 @@
   background: linear-gradient(135deg, var(--black3) 0%, var(--black4) 100%);
 }
 
+/* Tetr Theme Loading State */
+[data-theme="tetr"] .loadingState {
+  background: linear-gradient(135deg, #F3F7E1 0%, #ffffff 100%) !important;
+}
+
 /* New Lottie container styling */
 .lottieContainer {
   width: 200px;
   height: 200px;
   margin-bottom: 24px;
+}
+
+/* Tetr Theme Lottie Container - Invert colors */
+[data-theme="tetr"] .lottieContainer {
+  filter: invert(1);
 }
 
 /* Old spinner styles, kept for fallback */
@@ -407,6 +417,17 @@
   font-size: 14px;
   color: var(--grey10);
   font-family: var(--go-regular);
+}
+
+/* Tetr Theme Loading Text */
+[data-theme="tetr"] .loadingText {
+  color: #004822 !important;
+  font-family: 'plexBold', 'Aeonik-bold', sans-serif !important;
+}
+
+[data-theme="tetr"] .loadingSubtext {
+  color: #737373 !important;
+  font-family: 'plexRegular', sans-serif !important;
 }
 
 @media (max-width: 768px) {

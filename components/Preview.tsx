@@ -80,6 +80,7 @@ interface PreviewProps {
   activeVersionLabel?: string
   onHtmlChange?: (updatedHtml: string) => void
   onEditModeChange?: (isEditMode: boolean) => void
+  selectedTheme?: "mastersunion" | "tetr"
 }
 
 const getIframeDocument = (iframe: HTMLIFrameElement | null) => {
@@ -697,7 +698,7 @@ const applyBoldFormatting = (doc: Document) => {
   wrapSelectionWithBoldSpan(doc)
 }
 
-export default function Preview({ html, isLoading, activeVersionLabel, onHtmlChange, onEditModeChange }: PreviewProps) {
+export default function Preview({ html, isLoading, activeVersionLabel, onHtmlChange, onEditModeChange, selectedTheme = "mastersunion" }: PreviewProps) {
   const [displayHtml, setDisplayHtml] = useState(html)
   const [isEditMode, setIsEditMode] = useState(false)
   const [iframeReady, setIframeReady] = useState(false)
@@ -1070,17 +1071,20 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   useEffect(() => {
     // Only reset iframe ready state if we're not in edit mode
     // This prevents iframe reload while editing
+    // The iframe load handler will properly set iframeReady to true when the new HTML loads
     if (!isEditMode) {
       setIframeReady(false)
-      // Check if iframe is already loaded and set ready immediately
-      const iframe = iframeRef.current
-      if (iframe && displayHtml) {
-        const doc = getIframeDocument(iframe)
-        if (doc && doc.head && doc.body) {
-          // Iframe is already loaded, set ready immediately
-          setTimeout(() => setIframeReady(true), 100)
+      // Check if iframe is already loaded after a short delay
+      const checkIframeReady = setTimeout(() => {
+        const iframe = iframeRef.current
+        if (iframe) {
+          const doc = getIframeDocument(iframe)
+          if (doc && doc.head && doc.body && doc.readyState === "complete") {
+            setIframeReady(true)
+          }
         }
-      }
+      }, 100)
+      return () => clearTimeout(checkIframeReady)
     }
   }, [displayHtml, isEditMode])
 
@@ -1147,11 +1151,15 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     // Check if document is already loaded and has head/body
     const checkReady = () => {
       const doc = getIframeDocument(iframe)
-      if (doc && doc.readyState === "complete" && doc.head && doc.body) {
+      if (doc && (doc.readyState === "complete" || doc.readyState === "interactive") && doc.head && doc.body) {
         handleLoad()
       }
     }
+    // Check immediately and also after a short delay to catch fast loads
     checkReady()
+    const immediateCheck = setTimeout(() => {
+      checkReady()
+    }, 50)
 
     // Fallback: Set iframe ready after a reasonable timeout if load event doesn't fire
     const fallbackTimeout = setTimeout(() => {
@@ -1165,19 +1173,21 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     // Re-setup handlers when HTML changes
     const intervalId = setInterval(() => {
       const doc = getIframeDocument(iframe)
-      if (doc && doc.body) {
+      if (doc && doc.body && doc.head) {
         setupPlayButtonHandlers(doc)
         // Also check if iframe is ready but state wasn't set
-        if (!iframeReady && doc.head) {
+        // Check readyState to ensure document is fully loaded
+        if (doc.readyState === "complete" || doc.readyState === "interactive") {
           setIframeReady(true)
         }
       }
-    }, 1000)
+    }, 500) // Check more frequently (every 500ms instead of 1000ms)
 
     return () => {
       iframe.removeEventListener("load", handleLoad)
       clearInterval(intervalId)
       clearTimeout(fallbackTimeout)
+      clearTimeout(immediateCheck)
     }
   }, [displayHtml])
 
@@ -1632,7 +1642,23 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       persistEditedHtml()
       setIsEditMode(false)
     }
-  }, [isLoading, isEditMode, persistEditedHtml])
+    // When loading completes, ensure iframeReady is set correctly
+    if (!isLoading && displayHtml) {
+      const checkIframeReady = setTimeout(() => {
+        const iframe = iframeRef.current
+        if (iframe) {
+          const doc = getIframeDocument(iframe)
+          if (doc && doc.head && doc.body) {
+            // If document is already loaded, set ready immediately
+            if (doc.readyState === "complete" || doc.readyState === "interactive") {
+              setIframeReady(true)
+            }
+          }
+        }
+      }, 200)
+      return () => clearTimeout(checkIframeReady)
+    }
+  }, [isLoading, isEditMode, persistEditedHtml, displayHtml])
 
   useEffect(() => {
     return () => {
@@ -2321,7 +2347,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
           )}
         </>
       )}
-      <div className={styles.previewWrapper}>
+      <div className={styles.previewWrapper} data-theme={selectedTheme}>
         {isLoading ? (
           <div className={styles.loadingState}>
             <div className={styles.lottieContainer}>

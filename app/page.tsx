@@ -345,9 +345,15 @@ export default function Home() {
   const storedHasGenerated = localStorage.getItem("ws_hasGenerated");
 
   if (storedVersionId) setSelectedVersionId(storedVersionId);
+  // Only restore HTML from localStorage as a fallback (small HTML only)
+  // Large HTML will be restored from database versions in the fetchHistory effect
   if (storedHtml) {
-    setGeneratedHtml(storedHtml);
-    setHasGenerated(storedHasGenerated === "true");
+    try {
+      setGeneratedHtml(storedHtml);
+      setHasGenerated(storedHasGenerated === "true");
+    } catch (error) {
+      console.warn("Error restoring HTML from localStorage:", error);
+    }
   }
   if (storedPrompt) setCurrentPrompt(storedPrompt);
   if (storedCounter) setVersionCounter(parseInt(storedCounter, 10));
@@ -375,8 +381,21 @@ export default function Home() {
       if (data.success && Array.isArray(data.data)) {
         setVersions(data.data);
 
+        const storedVersionId = localStorage.getItem("ws_selectedVersionId");
         if (!selectedVersionId && data.data.length > 0) {
           setVersionCounter(data.data[0].versionNumber);
+        }
+        
+        // Restore HTML from selected version if available (more reliable than localStorage for large HTML)
+        if (storedVersionId && data.data.length > 0) {
+          const versionToRestore = data.data.find((v: PromptVersion) => v._id === storedVersionId);
+          if (versionToRestore) {
+            setGeneratedHtml(versionToRestore.html);
+            setHasGenerated(true);
+            if (versionToRestore.theme) {
+              setSelectedTheme(versionToRestore.theme);
+            }
+          }
         }
       }
     } catch (err) {
@@ -391,11 +410,37 @@ export default function Home() {
 useEffect(() => {
   if (!isAuthenticated) return;
 
-  localStorage.setItem("ws_selectedVersionId", selectedVersionId || "");
-  localStorage.setItem("ws_generatedHtml", generatedHtml);
-  localStorage.setItem("ws_currentPrompt", currentPrompt);
-  localStorage.setItem("ws_versionCounter", versionCounter.toString());
-  localStorage.setItem("ws_hasGenerated", hasGenerated.toString());
+  try {
+    localStorage.setItem("ws_selectedVersionId", selectedVersionId || "");
+    localStorage.setItem("ws_currentPrompt", currentPrompt);
+    localStorage.setItem("ws_versionCounter", versionCounter.toString());
+    localStorage.setItem("ws_hasGenerated", hasGenerated.toString());
+    
+    // Only store HTML in localStorage if it's small enough (< 2MB to be safe)
+    // Large HTML with base64 images should be retrieved from database instead
+    const htmlSize = new Blob([generatedHtml]).size;
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    
+    if (htmlSize < maxSize) {
+      localStorage.setItem("ws_generatedHtml", generatedHtml);
+    } else {
+      // Remove HTML from localStorage if it exists and is too large
+      localStorage.removeItem("ws_generatedHtml");
+    }
+  } catch (error: any) {
+    // Handle quota exceeded errors gracefully
+    if (error.name === 'QuotaExceededError' || error.code === 22) {
+      console.warn("localStorage quota exceeded, skipping HTML storage. Data will be restored from database.");
+      // Remove HTML from localStorage to free up space
+      try {
+        localStorage.removeItem("ws_generatedHtml");
+      } catch (e) {
+        // Ignore errors when trying to remove
+      }
+    } else {
+      console.error("Error saving to localStorage:", error);
+    }
+  }
 }, [
   isAuthenticated,
   selectedVersionId,
@@ -679,6 +724,7 @@ useEffect(() => {
       activeVersionLabel={activeVersionLabel}
       onHtmlChange={handlePreviewHtmlChange}
       onEditModeChange={setIsPreviewEditMode}
+      selectedTheme={selectedTheme}
     />
   )}
  
