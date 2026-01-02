@@ -501,6 +501,20 @@ useEffect(() => {
   const selectedVersion = versions.find(v => v._id === selectedVersionId)
   const activeVersionLabel = selectedVersion ? `Version ${selectedVersion.versionNumber}` : undefined
 
+  const handleNewChat = () => {
+    setSelectedVersionId(null)
+    setGeneratedHtml("")
+    setCurrentPrompt("")
+    setHasGenerated(false)
+    setError("")
+    // Clear localStorage for current chat state
+    localStorage.removeItem("ws_selectedVersionId")
+    localStorage.removeItem("ws_generatedHtml")
+    localStorage.removeItem("ws_currentPrompt")
+    localStorage.removeItem("ws_hasGenerated")
+    // Keep versionCounter and versions (history) intact
+  }
+
   
   return (
   <div className={styles.container}>
@@ -512,7 +526,7 @@ useEffect(() => {
           
           <div className={styles.historyHeader}>
             <p className={styles.promptEyebrow}>History</p>
-           <ProfileMenu />
+           <ProfileMenu onNewChat={handleNewChat} />
           </div>
 
           <div className={styles.historyList}>

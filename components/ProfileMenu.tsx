@@ -3,7 +3,11 @@
 import { useState, useRef, useEffect } from "react"
 import styles from "./ProfileMenu.module.css"
 
-export default function ProfileMenu() {
+interface ProfileMenuProps {
+  onNewChat?: () => void
+}
+
+export default function ProfileMenu({ onNewChat }: ProfileMenuProps) {
   const [open, setOpen] = useState(false)
   const [fullName, setFullName] = useState<string>("User")
   const menuRef = useRef<HTMLDivElement>(null)
@@ -12,6 +16,13 @@ export default function ProfileMenu() {
     const name = localStorage.getItem("mu_fullName")
     if (name) setFullName(name)
   }, [])
+
+  const handleNewChat = () => {
+    setOpen(false)
+    if (onNewChat) {
+      onNewChat()
+    }
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("mu_auth")
@@ -61,6 +72,10 @@ export default function ProfileMenu() {
           </div>
 
           <div className={styles.divider} />
+
+          <button onClick={handleNewChat} className={styles.menuItem}>
+            💬 New Chat
+          </button>
 
           <button onClick={handleLogout} className={styles.menuItem}>
             🚪 Logout
