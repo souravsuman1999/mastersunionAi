@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, ChangeEvent } from "react"
 import dynamic from "next/dynamic"
 import styles from "./Preview.module.css"
+import ProfileMenu from "./ProfileMenu"
 
 const DotLottieReact = dynamic(() => import("@lottiefiles/dotlottie-react").then((mod) => mod.DotLottieReact), {
   ssr: false,
@@ -81,6 +82,7 @@ interface PreviewProps {
   onHtmlChange?: (updatedHtml: string) => void
   onEditModeChange?: (isEditMode: boolean) => void
   selectedTheme?: "mastersunion" | "tetr"
+  onNewChat?: () => void
 }
 
 const getIframeDocument = (iframe: HTMLIFrameElement | null) => {
@@ -698,7 +700,7 @@ const applyBoldFormatting = (doc: Document) => {
   wrapSelectionWithBoldSpan(doc)
 }
 
-export default function Preview({ html, isLoading, activeVersionLabel, onHtmlChange, onEditModeChange, selectedTheme = "mastersunion" }: PreviewProps) {
+export default function Preview({ html, isLoading, activeVersionLabel, onHtmlChange, onEditModeChange, selectedTheme = "mastersunion", onNewChat }: PreviewProps) {
   const [displayHtml, setDisplayHtml] = useState(html)
   const [isEditMode, setIsEditMode] = useState(false)
   const [iframeReady, setIframeReady] = useState(false)
@@ -2179,6 +2181,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
               {isEditMode ? "Editing in preview" : "Preview locked"}
             </span> */}
           </div>
+          <ProfileMenu onNewChat={onNewChat} />
         </div>
       </div>
       {isEditMode && (

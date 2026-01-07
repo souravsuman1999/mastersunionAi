@@ -287,7 +287,6 @@ import { useRouter } from "next/navigation"
 import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
 import styles from "./page.module.css"
-import ProfileMenu from "@/components/ProfileMenu"
 
 
 type PromptVersion = {
@@ -587,7 +586,6 @@ useEffect(() => {
           
           <div className={styles.historyHeader}>
             <p className={styles.promptEyebrow}>History</p>
-           <ProfileMenu onNewChat={handleNewChat} />
           </div>
 
           <div className={styles.historyList}>
@@ -725,6 +723,7 @@ useEffect(() => {
       onHtmlChange={handlePreviewHtmlChange}
       onEditModeChange={setIsPreviewEditMode}
       selectedTheme={selectedTheme}
+      onNewChat={handleNewChat}
     />
   )}
  

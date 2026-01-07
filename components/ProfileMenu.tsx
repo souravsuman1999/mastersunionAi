@@ -11,6 +11,8 @@ export default function ProfileMenu({ onNewChat }: ProfileMenuProps) {
   const [open, setOpen] = useState(false)
   const [fullName, setFullName] = useState<string>("User")
   const menuRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const name = localStorage.getItem("mu_fullName")
@@ -38,30 +40,50 @@ export default function ProfileMenu({ onNewChat }: ProfileMenuProps) {
     window.location.href = "/auth"
   }
 
+  // Update dropdown position when open
+  useEffect(() => {
+    if (open && buttonRef.current && dropdownRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect()
+      dropdownRef.current.style.top = `${buttonRect.bottom + 8}px`
+      dropdownRef.current.style.right = `${window.innerWidth - buttonRect.right}px`
+    }
+  }, [open])
+
   // Close dropdown if clicked outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+      if (
+        menuRef.current && 
+        !menuRef.current.contains(target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target)
+      ) {
         setOpen(false)
       }
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside)
+      return () => document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [open])
 
   return (
-    <div className={styles.menuWrapper} ref={menuRef}>
-      <button
-        className={styles.profileButton}
-        onClick={() => setOpen(!open)}
-      >
-        <span className={styles.avatar}>
-          {fullName.charAt(0).toUpperCase()}
-        </span>
-      </button>
+    <>
+      <div className={styles.menuWrapper} ref={menuRef}>
+        <button
+          ref={buttonRef}
+          className={styles.profileButton}
+          onClick={() => setOpen(!open)}
+        >
+          <span className={styles.avatar}>
+            {fullName.charAt(0).toUpperCase()}
+          </span>
+        </button>
+      </div>
 
       {open && (
-        <div className={styles.dropdown}>
+        <div ref={dropdownRef} className={styles.dropdown}>
           <div className={styles.userSection}>
             <div className={styles.avatarLarge}>
               {fullName.charAt(0).toUpperCase()}
@@ -82,6 +104,6 @@ export default function ProfileMenu({ onNewChat }: ProfileMenuProps) {
           </button>
         </div>
       )}
-    </div>
+    </>
   )
 }
