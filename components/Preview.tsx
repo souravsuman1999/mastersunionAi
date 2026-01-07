@@ -355,22 +355,62 @@ const injectBaseStyles = (doc: Document) => {
         pointer-events: none;
         z-index: 10000;
       }
+      #${TOOLBAR_ID},
+      #${TOOLBAR_ID} * {
+        contenteditable: false !important;
+        -webkit-user-select: auto !important;
+        user-select: auto !important;
+      }
+      #${TOOLBAR_ID} input,
+      #${TOOLBAR_ID} button {
+        contenteditable: false !important;
+        pointer-events: auto !important;
+      }
       body[data-mu-edit-mode="true"] img {
         position: relative;
         transition: all 0.2s ease;
         cursor: pointer !important;
       }
+      body[data-mu-edit-mode="true"] img::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1;
+        pointer-events: none;
+        border-radius: inherit;
+      }
+      body[data-mu-edit-mode="true"] img::after {
+        content: "click the img to change";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: "Inter", "Segoe UI", sans-serif;
+        text-align: center;
+        z-index: 2;
+        pointer-events: none;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
       body[data-mu-edit-mode="true"] img:hover:not([${IMAGE_TARGET_ATTRIBUTE}]) {
         outline: 2px dashed rgba(86, 149, 255, 0.7) !important;
         box-shadow: 0 0 0 3px rgba(86, 149, 255, 0.2) !important;
-        opacity: 0.85;
-        filter: brightness(1.1);
       }
       body[data-mu-edit-mode="true"] img[${IMAGE_TARGET_ATTRIBUTE}]:hover {
         outline: 2px solid rgba(86, 149, 255, 1) !important;
         box-shadow: 0 0 0 4px rgba(86, 149, 255, 0.4) !important;
-        opacity: 0.9;
-        filter: brightness(1.15);
+      }
+      body[data-mu-edit-mode="true"] img[${IMAGE_TARGET_ATTRIBUTE}]::before,
+      body[data-mu-edit-mode="true"] img[${IMAGE_TARGET_ATTRIBUTE}]::after {
+        display: none;
       }
       body[data-mu-edit-mode="true"] button[${VIDEO_YOUTUBE_ATTRIBUTE}],
       body[data-mu-edit-mode="true"] button[${VIDEO_CDN_ATTRIBUTE}],
@@ -700,6 +740,40 @@ const applyBoldFormatting = (doc: Document) => {
   wrapSelectionWithBoldSpan(doc)
 }
 
+const TOOLBAR_ID = "mu-edit-toolbar"
+
+const removeToolbar = (doc: Document) => {
+  const existing = doc.getElementById(TOOLBAR_ID)
+  if (existing) {
+    existing.remove()
+  }
+}
+
+const positionToolbar = (element: HTMLElement, toolbar: HTMLElement, doc: Document) => {
+  const rect = element.getBoundingClientRect()
+  const scrollTop = doc.documentElement.scrollTop || doc.body.scrollTop
+  const scrollLeft = doc.documentElement.scrollLeft || doc.body.scrollLeft
+  
+  // Position toolbar below the element
+  toolbar.style.position = "absolute"
+  toolbar.style.top = `${rect.bottom + scrollTop + 8}px`
+  toolbar.style.left = `${rect.left + scrollLeft}px`
+  toolbar.style.zIndex = "100000"
+  toolbar.style.minWidth = `${Math.max(rect.width, 300)}px`
+  
+  // Ensure toolbar is visible within viewport
+  const toolbarRect = toolbar.getBoundingClientRect()
+  const viewportWidth = doc.documentElement.clientWidth
+  const viewportHeight = doc.documentElement.clientHeight
+  
+  if (toolbarRect.right > viewportWidth) {
+    toolbar.style.left = `${viewportWidth - toolbarRect.width - 10}px`
+  }
+  if (toolbarRect.bottom > viewportHeight + scrollTop) {
+    toolbar.style.top = `${rect.top + scrollTop - toolbarRect.height - 8}px`
+  }
+}
+
 export default function Preview({ html, isLoading, activeVersionLabel, onHtmlChange, onEditModeChange, selectedTheme = "mastersunion", onNewChat }: PreviewProps) {
   const [displayHtml, setDisplayHtml] = useState(html)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -729,6 +803,20 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   const highlightedImageRef = useRef<HTMLImageElement | null>(null)
   const imageMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const imageFileInputRef = useRef<HTMLInputElement | null>(null)
+  const toolbarCallbacksRef = useRef<{
+    onLinkValueChange?: (value: string) => void
+    onApplyLink?: () => void
+    onRemoveLink?: () => void
+    onVideoYoutubeChange?: (value: string) => void
+    onVideoCdnChange?: (value: string) => void
+    onVideoLinkChange?: (value: string) => void
+    onApplyVideo?: () => void
+    onRemoveVideo?: () => void
+    onRemoveVideoLink?: () => void
+    onImageUrlChange?: (value: string) => void
+    onImageFileSelect?: (file: File) => void
+    onClearSelection?: () => void
+  }>({})
 
   const clearHighlightedLink = useCallback(() => {
     if (highlightedLinkRef.current) {
@@ -1101,6 +1189,10 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       updateLinkEditorSelection(null)
       updateVideoEditorSelection(null)
       updateImageEditorSelection(null)
+      const doc = getIframeDocument(iframeRef.current)
+      if (doc) {
+        removeToolbar(doc)
+      }
     } else {
       // Re-setup play button handlers when entering edit mode
       const doc = getIframeDocument(iframeRef.current)
@@ -1421,6 +1513,14 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignore ALL keydown events from toolbar
+      const target = event.target as HTMLElement
+      const toolbar = doc.getElementById(TOOLBAR_ID)
+      if (toolbar && (toolbar.contains(target) || toolbar === target)) {
+        // Completely ignore all keyboard events from toolbar
+        return
+      }
+
       if (event.key === "Escape") {
         event.preventDefault()
         setIsEditMode(false)
@@ -1435,6 +1535,18 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
 
     const handleClick = (event: MouseEvent) => {
+      // Check if click is inside the toolbar - if so, don't interfere
+      const target = event.target as HTMLElement
+      const toolbar = doc.getElementById(TOOLBAR_ID)
+      if (toolbar && (toolbar.contains(target) || toolbar === target)) {
+        // If clicking on a button or input, let it handle the event
+        if (target.tagName === "BUTTON" || target.tagName === "INPUT" || target.closest("button") || target.closest("input")) {
+          return
+        }
+        event.stopPropagation()
+        return
+      }
+
       // In edit mode, prioritize selection over action
       // Check for image element first
       const imageElement = resolveImageElement(event.target)
@@ -1475,6 +1587,13 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
 
     const handleFocusIn = (event: FocusEvent) => {
+      // Ignore focus events from toolbar
+      const target = event.target as HTMLElement
+      const toolbar = doc.getElementById(TOOLBAR_ID)
+      if (toolbar && (toolbar.contains(target) || toolbar === target)) {
+        return
+      }
+
       const imageElement = resolveImageElement(event.target)
       if (imageElement) {
         updateImageEditorSelection(imageElement)
@@ -1674,14 +1793,34 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     setLinkEditorValue(event.target.value)
   }
 
-  const handleApplyLink = () => {
+  const handleApplyLink = (valueOverride?: string) => {
     const targetEntry = getResolvedLinkTarget()
     if (!targetEntry) {
       showLinkMessage("Select a button or link first", "error")
       return
     }
 
-    const sanitized = sanitizeLinkUrl(linkEditorValue)
+    // Get the value - prefer override, then try input field, then state
+    const doc = getIframeDocument(iframeRef.current)
+    let valueToUse = valueOverride || linkEditorValue
+    
+    // Try to get the value from the input field in the toolbar
+    if (!valueToUse && doc) {
+      const toolbar = doc.getElementById(TOOLBAR_ID)
+      if (toolbar) {
+        const input = toolbar.querySelector("input[type='text']") as HTMLInputElement
+        if (input && input.value) {
+          valueToUse = input.value
+        }
+      }
+    }
+
+    if (!valueToUse || valueToUse.trim() === "") {
+      showLinkMessage("Enter a valid URL or path", "error")
+      return
+    }
+
+    const sanitized = sanitizeLinkUrl(valueToUse)
     if (!sanitized) {
       showLinkMessage("Enter a valid URL or path", "error")
       return
@@ -1703,6 +1842,9 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
 
     setLinkEditorValue(sanitized)
     showLinkMessage("Link updated", "success")
+    
+    // Persist the changes
+    persistEditedHtml()
   }
 
   const handleRemoveLink = () => {
@@ -2050,6 +2192,678 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
   }
 
+  const injectToolbar = useCallback((target: HTMLElement | null, type: "link" | "video" | "image" | null) => {
+    const doc = getIframeDocument(iframeRef.current)
+    if (!doc || !doc.body) return
+
+    // Remove existing toolbar
+    removeToolbar(doc)
+
+    if (!target || !type) return
+
+    const toolbar = doc.createElement("div")
+    toolbar.id = TOOLBAR_ID
+    toolbar.setAttribute("contenteditable", "false")
+    toolbar.style.cssText = `
+      position: absolute;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      z-index: 100000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: "Inter", "Segoe UI", sans-serif;
+    `
+
+    if (type === "link" && linkEditorTarget) {
+      const input = doc.createElement("input")
+      input.type = "text"
+      input.placeholder = "https://example.com or /contact"
+      input.value = linkEditorValue
+      input.style.cssText = `
+        flex: 1;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        font-size: 12px;
+        font-family: inherit;
+      `
+      input.setAttribute("contenteditable", "false")
+      input.setAttribute("spellcheck", "false")
+      // Completely isolate input events from document handlers
+      // Store cursor position and maintain focus
+      let cursorPosition = 0
+      input.addEventListener("input", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        const inputEl = e.target as HTMLInputElement
+        const value = inputEl.value
+        cursorPosition = inputEl.selectionStart || value.length
+        setLinkEditorValue(value)
+        // Maintain focus and cursor position
+        requestAnimationFrame(() => {
+          if (document.activeElement !== inputEl) {
+            inputEl.focus()
+            inputEl.setSelectionRange(cursorPosition, cursorPosition)
+          }
+        })
+      }, { capture: true })
+      input.addEventListener("keydown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        // Prevent any default scrolling behavior
+        if (e.key === "Enter") {
+          e.preventDefault()
+        }
+        // Prevent page scrolling on arrow keys
+        if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"].includes(e.key)) {
+          // Only prevent if not in input (arrow keys should work within input)
+          const inputEl = e.target as HTMLInputElement
+          const selectionStart = inputEl.selectionStart || 0
+          const selectionEnd = inputEl.selectionEnd || 0
+          const valueLength = inputEl.value.length
+          
+          // Allow arrow keys within input, but prevent page scrolling
+          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            // If at start/end of input, prevent default to avoid page scroll
+            if ((e.key === "ArrowUp" && selectionStart === 0) || 
+                (e.key === "ArrowDown" && selectionEnd === valueLength)) {
+              e.preventDefault()
+            }
+          } else {
+            e.preventDefault()
+          }
+        }
+        // Store scroll position before any potential scroll
+        const iframeWindow = getIframeWindow(iframeRef.current)
+        if (iframeWindow) {
+          const scrollY = iframeWindow.scrollY
+          // Restore scroll position after keydown
+          requestAnimationFrame(() => {
+            if (iframeWindow && iframeWindow.scrollY !== scrollY) {
+              iframeWindow.scrollTo(iframeWindow.scrollX, scrollY)
+            }
+          })
+        }
+      }, { capture: true })
+      input.addEventListener("keyup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      input.addEventListener("keypress", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      input.addEventListener("focus", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        // Prevent any scrolling when input receives focus
+        const inputEl = e.target as HTMLInputElement
+        // Store scroll position
+        const iframeWindow = getIframeWindow(iframeRef.current)
+        if (iframeWindow) {
+          const scrollX = iframeWindow.scrollX
+          const scrollY = iframeWindow.scrollY
+          // Prevent body from scrolling
+          inputEl.scrollIntoView({ behavior: "instant", block: "nearest" })
+          // Restore scroll position immediately
+          requestAnimationFrame(() => {
+            if (iframeWindow) {
+              iframeWindow.scrollTo(scrollX, scrollY)
+            }
+          })
+        }
+      }, { capture: true })
+      input.addEventListener("blur", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      input.addEventListener("mousedown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      input.addEventListener("mouseup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      input.addEventListener("click", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      input.addEventListener("focusin", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      input.addEventListener("focusout", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+
+      const controls = doc.createElement("div")
+      controls.style.cssText = "display: flex; gap: 10px; align-items: center;"
+      
+      const saveBtn = doc.createElement("button")
+      saveBtn.textContent = "Save link"
+      saveBtn.style.cssText = `
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        background: orange;
+        color: #000;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      `
+      saveBtn.setAttribute("contenteditable", "false")
+      saveBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        // Get the current value from the input field and pass it directly
+        const currentInput = input.value
+        handleApplyLink(currentInput)
+      })
+      saveBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+
+      const removeBtn = doc.createElement("button")
+      removeBtn.textContent = "Remove link"
+      removeBtn.setAttribute("contenteditable", "false")
+      removeBtn.style.cssText = `
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        cursor: pointer;
+      `
+      removeBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        handleRemoveLink()
+      })
+      removeBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+
+      controls.appendChild(input)
+      controls.appendChild(saveBtn)
+      controls.appendChild(removeBtn)
+      toolbar.appendChild(controls)
+
+      if (linkEditorMessage) {
+        const message = doc.createElement("span")
+        message.textContent = linkEditorMessage
+        message.style.cssText = `font-size: 11px; color: ${linkEditorTone === "success" ? "orange" : linkEditorTone === "error" ? "#ff7b7b" : "rgba(255, 255, 255, 0.7)"};`
+        toolbar.appendChild(message)
+      }
+    } else if (type === "video" && videoEditorTarget) {
+      const youtubeInput = doc.createElement("input")
+      youtubeInput.type = "text"
+      youtubeInput.placeholder = "YouTube URL or Video ID"
+      youtubeInput.value = videoEditorYoutube
+      youtubeInput.style.cssText = `
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        font-size: 12px;
+        font-family: inherit;
+        margin-bottom: 8px;
+      `
+      youtubeInput.setAttribute("contenteditable", "false")
+      youtubeInput.setAttribute("spellcheck", "false")
+      youtubeInput.addEventListener("input", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        setVideoEditorYoutube((e.target as HTMLInputElement).value)
+      }, { capture: true })
+      youtubeInput.addEventListener("keydown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        if (e.key === "Enter") {
+          e.preventDefault()
+        }
+      }, { capture: true })
+      youtubeInput.addEventListener("keyup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      youtubeInput.addEventListener("keypress", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      youtubeInput.addEventListener("focus", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      youtubeInput.addEventListener("blur", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      youtubeInput.addEventListener("mousedown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      youtubeInput.addEventListener("mouseup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      youtubeInput.addEventListener("click", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      youtubeInput.addEventListener("focusin", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      youtubeInput.addEventListener("focusout", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+
+      const cdnInput = doc.createElement("input")
+      cdnInput.type = "text"
+      cdnInput.placeholder = "CDN Video URL"
+      cdnInput.value = videoEditorCdn
+      cdnInput.setAttribute("contenteditable", "false")
+      cdnInput.setAttribute("spellcheck", "false")
+      cdnInput.style.cssText = youtubeInput.style.cssText
+      cdnInput.addEventListener("input", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        setVideoEditorCdn((e.target as HTMLInputElement).value)
+      }, { capture: true })
+      cdnInput.addEventListener("keydown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        if (e.key === "Enter") {
+          e.preventDefault()
+        }
+      }, { capture: true })
+      cdnInput.addEventListener("keyup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      cdnInput.addEventListener("keypress", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      cdnInput.addEventListener("focus", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      cdnInput.addEventListener("blur", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      cdnInput.addEventListener("mousedown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      cdnInput.addEventListener("mouseup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      cdnInput.addEventListener("click", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      cdnInput.addEventListener("focusin", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      cdnInput.addEventListener("focusout", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+
+      const linkInput = doc.createElement("input")
+      linkInput.type = "text"
+      linkInput.placeholder = "Regular Link"
+      linkInput.value = videoEditorLink
+      linkInput.setAttribute("contenteditable", "false")
+      linkInput.setAttribute("spellcheck", "false")
+      linkInput.style.cssText = youtubeInput.style.cssText
+      linkInput.addEventListener("input", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        setVideoEditorLink((e.target as HTMLInputElement).value)
+      }, { capture: true })
+      linkInput.addEventListener("keydown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        if (e.key === "Enter") {
+          e.preventDefault()
+        }
+      }, { capture: true })
+      linkInput.addEventListener("keyup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      linkInput.addEventListener("keypress", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      linkInput.addEventListener("focus", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      linkInput.addEventListener("blur", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      linkInput.addEventListener("mousedown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      linkInput.addEventListener("mouseup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      linkInput.addEventListener("click", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      linkInput.addEventListener("focusin", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      linkInput.addEventListener("focusout", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+
+      const controls = doc.createElement("div")
+      controls.style.cssText = "display: flex; gap: 10px; align-items: center; flex-wrap: wrap;"
+      
+      const saveBtn = doc.createElement("button")
+      saveBtn.textContent = "Save"
+      saveBtn.style.cssText = `
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        background: orange;
+        color: #000;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      `
+      saveBtn.setAttribute("contenteditable", "false")
+      saveBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        handleApplyVideo()
+      })
+      saveBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+
+      const removeVideoBtn = doc.createElement("button")
+      removeVideoBtn.textContent = "Remove video"
+      removeVideoBtn.setAttribute("contenteditable", "false")
+      removeVideoBtn.style.cssText = `
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        cursor: pointer;
+      `
+      removeVideoBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        handleRemoveVideo()
+      })
+      removeVideoBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+
+      toolbar.appendChild(youtubeInput)
+      toolbar.appendChild(cdnInput)
+      toolbar.appendChild(linkInput)
+      controls.appendChild(saveBtn)
+      controls.appendChild(removeVideoBtn)
+      toolbar.appendChild(controls)
+
+      if (videoEditorMessage) {
+        const message = doc.createElement("span")
+        message.textContent = videoEditorMessage
+        message.style.cssText = `font-size: 11px; color: ${videoEditorTone === "success" ? "orange" : videoEditorTone === "error" ? "#ff7b7b" : "rgba(255, 255, 255, 0.7)"};`
+        toolbar.appendChild(message)
+      }
+    } else if (type === "image" && imageEditorTarget) {
+      const urlInput = doc.createElement("input")
+      urlInput.type = "text"
+      urlInput.placeholder = "Image URL"
+      urlInput.style.cssText = `
+        flex: 1;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        font-size: 12px;
+        font-family: inherit;
+      `
+      urlInput.setAttribute("contenteditable", "false")
+      urlInput.setAttribute("spellcheck", "false")
+      urlInput.addEventListener("blur", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        handleImageUrlChange((e.target as HTMLInputElement).value)
+      }, { capture: true })
+      urlInput.addEventListener("keydown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        if (e.key === "Enter") {
+          e.preventDefault()
+          handleImageUrlChange((e.target as HTMLInputElement).value)
+        }
+      }, { capture: true })
+      urlInput.addEventListener("keyup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("keypress", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("focus", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("input", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("mousedown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("mouseup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("click", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("focusin", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("focusout", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+
+      const fileInput = doc.createElement("input")
+      fileInput.type = "file"
+      fileInput.accept = "image/*"
+      fileInput.style.display = "none"
+      fileInput.id = "mu-image-file-input"
+      fileInput.addEventListener("change", (e) => {
+        e.stopPropagation()
+        const input = e.target as HTMLInputElement
+        if (input.files?.[0]) {
+          handleImageFileSelect({ target: input } as ChangeEvent<HTMLInputElement>)
+        }
+        // Reset the input so the same file can be selected again
+        input.value = ""
+      })
+
+      const controls = doc.createElement("div")
+      controls.style.cssText = "display: flex; gap: 10px; align-items: center;"
+      
+      const uploadBtn = doc.createElement("button")
+      uploadBtn.textContent = "Upload Image"
+      uploadBtn.type = "button"
+      uploadBtn.style.cssText = `
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        background: orange;
+        color: #000;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      `
+      uploadBtn.setAttribute("contenteditable", "false")
+      uploadBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        // Use setTimeout to ensure the click event completes
+        setTimeout(() => {
+          fileInput.click()
+        }, 0)
+      })
+      uploadBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      // Append file input to body so it's accessible
+      doc.body.appendChild(fileInput)
+
+      controls.appendChild(urlInput)
+      controls.appendChild(uploadBtn)
+      toolbar.appendChild(controls)
+
+      if (imageEditorMessage) {
+        const message = doc.createElement("span")
+        message.textContent = imageEditorMessage
+        message.style.cssText = `font-size: 11px; color: ${imageEditorTone === "success" ? "orange" : imageEditorTone === "error" ? "#ff7b7b" : "rgba(255, 255, 255, 0.7)"};`
+        toolbar.appendChild(message)
+      }
+    }
+
+    // Stop propagation on toolbar to prevent clearing selection
+    // But allow button and input interactions to work
+    toolbar.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement
+      // Don't stop propagation for buttons or inputs - they handle it themselves
+      if (target.tagName !== "BUTTON" && target.tagName !== "INPUT" && !target.closest("button") && !target.closest("input")) {
+        e.stopPropagation()
+      }
+    })
+    toolbar.addEventListener("mousedown", (e) => {
+      const target = e.target as HTMLElement
+      // Allow inputs and buttons to receive focus
+      if (target.tagName !== "BUTTON" && target.tagName !== "INPUT" && !target.closest("button") && !target.closest("input")) {
+        e.stopPropagation()
+      }
+    })
+    toolbar.addEventListener("mouseup", (e) => {
+      const target = e.target as HTMLElement
+      if (target.tagName !== "BUTTON" && target.tagName !== "INPUT" && !target.closest("button") && !target.closest("input")) {
+        e.stopPropagation()
+      }
+    })
+    toolbar.addEventListener("focusin", (e) => {
+      e.stopPropagation()
+    })
+    toolbar.addEventListener("focusout", (e) => {
+      e.stopPropagation()
+    })
+
+    // Stop propagation on inputs to prevent clearing selection when focusing
+    toolbar.querySelectorAll("input").forEach((el) => {
+      el.addEventListener("mousedown", (e) => e.stopPropagation())
+      el.addEventListener("mouseup", (e) => e.stopPropagation())
+      el.addEventListener("focus", (e) => e.stopPropagation())
+      el.addEventListener("blur", (e) => e.stopPropagation())
+    })
+
+    doc.body.appendChild(toolbar)
+    positionToolbar(target, toolbar, doc)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkEditorTarget, linkEditorMessage, linkEditorTone, videoEditorTarget, videoEditorMessage, videoEditorTone, imageEditorTarget, imageEditorMessage, imageEditorTone])
+
+  useEffect(() => {
+    if (!isEditMode) return
+
+    const doc = getIframeDocument(iframeRef.current)
+    if (!doc || !doc.body) return
+
+    const updateToolbar = () => {
+      if (linkEditorTarget) {
+        injectToolbar(linkEditorTarget.element, "link")
+      } else if (videoEditorTarget) {
+        injectToolbar(videoEditorTarget, "video")
+      } else if (imageEditorTarget) {
+        injectToolbar(imageEditorTarget, "image")
+      } else {
+        removeToolbar(doc)
+      }
+    }
+
+    updateToolbar()
+
+    // Reposition toolbar on scroll
+    const handleScroll = () => {
+      const toolbar = doc.getElementById(TOOLBAR_ID)
+      if (toolbar) {
+        if (linkEditorTarget) {
+          positionToolbar(linkEditorTarget.element, toolbar, doc)
+        } else if (videoEditorTarget) {
+          positionToolbar(videoEditorTarget, toolbar, doc)
+        } else if (imageEditorTarget) {
+          positionToolbar(imageEditorTarget, toolbar, doc)
+        }
+      }
+    }
+
+    const iframeWindow = getIframeWindow(iframeRef.current)
+    if (iframeWindow) {
+      iframeWindow.addEventListener("scroll", handleScroll, true)
+      iframeWindow.addEventListener("resize", handleScroll)
+    }
+
+    return () => {
+      if (iframeWindow) {
+        iframeWindow.removeEventListener("scroll", handleScroll, true)
+        iframeWindow.removeEventListener("resize", handleScroll)
+      }
+      removeToolbar(doc)
+    }
+  }, [isEditMode, linkEditorTarget, videoEditorTarget, imageEditorTarget, linkEditorMessage, linkEditorTone, videoEditorMessage, videoEditorTone, imageEditorMessage, imageEditorTone, injectToolbar])
 
   const handleToggleEditMode = () => {
     if (!displayHtml || isLoading || !iframeReady) {
@@ -2184,172 +2998,6 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
           <ProfileMenu onNewChat={onNewChat} />
         </div>
       </div>
-      {isEditMode && (
-        <>
-          {linkEditorTarget && (
-            <div className={styles.linkToolbar}>
-              <div className={styles.linkToolbarControls}>
-                <input
-                  type="text"
-                  className={styles.linkInput}
-                  placeholder="https://example.com or /contact"
-                  value={linkEditorValue}
-                  onChange={handleLinkInputChange}
-                  disabled={!linkEditorTarget}
-                />
-                <button
-                  className={styles.applyLinkButton}
-                  onClick={handleApplyLink}
-                  type="button"
-                  disabled={!linkEditorTarget || !linkEditorValue.trim()}
-                >
-                  Save link
-                </button>
-                <button
-                  className={styles.removeLinkButton}
-                  onClick={handleRemoveLink}
-                  type="button"
-                  disabled={!linkEditorTarget}
-                >
-                  Remove link
-                </button>
-              </div>
-              {linkEditorMessage && (
-                <span className={styles.linkToolbarMessage} data-tone={linkEditorTone} aria-live="polite">
-                  {linkEditorMessage}
-                </span>
-              )}
-            </div>
-          )}
-          {videoEditorTarget && (
-            <div className={styles.linkToolbar}>
-              <div className={styles.linkToolbarTop}>
-                <div>
-                  <h3 className={styles.linkToolbarTitle}>Edit Video Links</h3>
-                  <p className={styles.linkToolbarHint}>Enter YouTube URL, CDN video URL, or regular navigation link</p>
-                </div>
-                <button
-                  className={styles.linkToolbarClearSelection}
-                  onClick={() => updateVideoEditorSelection(null)}
-                  type="button"
-                >
-                  Clear selection
-                </button>
-              </div>
-              <div className={styles.linkToolbarControls}>
-                <input
-                  type="text"
-                  className={styles.linkInput}
-                  placeholder="YouTube URL (e.g., https://youtube.com/watch?v=...) or Video ID"
-                  value={videoEditorYoutube}
-                  onChange={handleVideoYoutubeChange}
-                  disabled={!videoEditorTarget}
-                />
-                <input
-                  type="text"
-                  className={styles.linkInput}
-                  placeholder="CDN Video URL (e.g., https://example.com/video.mp4)"
-                  value={videoEditorCdn}
-                  onChange={handleVideoCdnChange}
-                  disabled={!videoEditorTarget}
-                />
-                <input
-                  type="text"
-                  className={styles.linkInput}
-                  placeholder="Regular Link (e.g., https://example.com or /contact)"
-                  value={videoEditorLink}
-                  onChange={handleVideoLinkChange}
-                  disabled={!videoEditorTarget}
-                />
-                <button
-                  className={styles.applyLinkButton}
-                  onClick={handleApplyVideo}
-                  type="button"
-                  disabled={!videoEditorTarget || (!videoEditorYoutube.trim() && !videoEditorCdn.trim() && !videoEditorLink.trim())}
-                >
-                  Save
-                </button>
-                <button
-                  className={styles.removeLinkButton}
-                  onClick={handleRemoveVideo}
-                  type="button"
-                  disabled={!videoEditorTarget}
-                >
-                  Remove video
-                </button>
-                <button
-                  className={styles.removeLinkButton}
-                  onClick={handleRemoveVideoLink}
-                  type="button"
-                  disabled={!videoEditorTarget || !videoEditorLink.trim()}
-                >
-                  Remove link
-                </button>
-              </div>
-              {videoEditorMessage && (
-                <span className={styles.linkToolbarMessage} data-tone={videoEditorTone} aria-live="polite">
-                  {videoEditorMessage}
-                </span>
-              )}
-            </div>
-          )}
-          {imageEditorTarget && (
-            <div className={styles.linkToolbar}>
-              <div className={styles.linkToolbarTop}>
-                <div>
-                  <h3 className={styles.linkToolbarTitle}>Edit Image</h3>
-                  <p className={styles.linkToolbarHint}>Drag & drop an image, upload a file, or enter an image URL</p>
-                </div>
-                <button
-                  className={styles.linkToolbarClearSelection}
-                  onClick={() => updateImageEditorSelection(null)}
-                  type="button"
-                >
-                  Clear selection
-                </button>
-              </div>
-              <div className={styles.linkToolbarControls}>
-                <input
-                  type="text"
-                  className={styles.linkInput}
-                  placeholder="Image URL (e.g., https://example.com/image.jpg)"
-                  onBlur={(e) => handleImageUrlChange(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleImageUrlChange(e.currentTarget.value)
-                    }
-                  }}
-                  disabled={!imageEditorTarget}
-                />
-                <input
-                  ref={imageFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageFileSelect}
-                  className={styles.fileInputHidden}
-                  id="image-upload-edit"
-                  disabled={!imageEditorTarget}
-                />
-                <label
-                  htmlFor="image-upload-edit"
-                  className={styles.applyLinkButton}
-                  style={{ cursor: imageEditorTarget ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: "6px" }}>
-                    <path d="M13.3333 6.66667L10 3.33333M10 3.33333L6.66667 6.66667M10 3.33333V13.3333M3.33333 13.3333V15C3.33333 15.442 3.50952 15.866 3.82198 16.1785C4.13445 16.491 4.55841 16.6667 5 16.6667H15C15.4416 16.6667 15.8655 16.491 16.178 16.1785C16.4905 15.866 16.6667 15.442 16.6667 15V13.3333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Upload Image
-                </label>
-              </div>
-              {imageEditorMessage && (
-                <span className={styles.linkToolbarMessage} data-tone={imageEditorTone} aria-live="polite">
-                  {imageEditorMessage}
-                </span>
-              )}
-            </div>
-          )}
-        </>
-      )}
       <div className={styles.previewWrapper} data-theme={selectedTheme}>
         {isLoading ? (
           <div className={styles.loadingState}>
