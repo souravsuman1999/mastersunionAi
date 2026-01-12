@@ -288,6 +288,7 @@ import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
 import AdvancedModeToggle from "@/components/AdvancedModeToggle"
 import OutputSectionsPanel from "@/components/OutputSectionsPanel"
+import PricingModal from "@/components/PricingModal"
 import styles from "./page.module.css"
 
 
@@ -326,6 +327,7 @@ export default function Home() {
   const [selectedTheme, setSelectedTheme] = useState<"mastersunion" | "tetr">("mastersunion")
   const [isAdvancedMode, setIsAdvancedMode] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [showPricingModal, setShowPricingModal] = useState(false)
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("mu_auth") === "true";
@@ -584,19 +586,26 @@ useEffect(() => {
       // Switching from Advanced Mode OFF - no delay needed for showing
       setIsAdvancedMode(enabled)
     } else if (enabled && !isAdvancedMode) {
-      // Switching to Advanced Mode ON - delay to show hide animation
-      setIsTransitioning(true)
-      setTimeout(() => {
-        setIsAdvancedMode(enabled)
-        setIsTransitioning(false)
-      }, 350) // Match animation duration
+      // Show pricing modal first when enabling advanced mode
+      setShowPricingModal(true)
     } else {
       setIsAdvancedMode(enabled)
     }
   }
 
+  const handlePricingModalClose = () => {
+    setShowPricingModal(false)
+    // After closing pricing modal, proceed with enabling advanced mode
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setIsAdvancedMode(true)
+      setIsTransitioning(false)
+    }, 350) // Match animation duration
+  }
+
   
   return (
+  <>
   <div className={`${styles.container} ${selectedTheme === "tetr" ? styles.tetrTheme : ""}`} data-theme={selectedTheme}>
     <main className={styles.main}>
 
@@ -779,6 +788,14 @@ useEffect(() => {
 
     </main>
   </div>
+
+  {/* Pricing Modal */}
+  <PricingModal 
+    isOpen={showPricingModal}
+    onClose={handlePricingModalClose}
+    selectedTheme={selectedTheme}
+  />
+  </>
 )
 
 }
