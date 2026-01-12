@@ -286,6 +286,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
+import AdvancedModeToggle from "@/components/AdvancedModeToggle"
+import OutputSectionsPanel from "@/components/OutputSectionsPanel"
 import styles from "./page.module.css"
 
 
@@ -322,6 +324,8 @@ export default function Home() {
   const [isPreviewEditMode, setIsPreviewEditMode] = useState(false)
   const [hasRestoredState, setHasRestoredState] = useState(false)
   const [selectedTheme, setSelectedTheme] = useState<"mastersunion" | "tetr">("mastersunion")
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("mu_auth") === "true";
@@ -575,74 +579,113 @@ useEffect(() => {
     // Keep versionCounter and versions (history) intact
   }
 
+  const handleAdvancedModeToggle = (enabled: boolean) => {
+    if (!enabled && isAdvancedMode) {
+      // Switching from Advanced Mode OFF - no delay needed for showing
+      setIsAdvancedMode(enabled)
+    } else if (enabled && !isAdvancedMode) {
+      // Switching to Advanced Mode ON - delay to show hide animation
+      setIsTransitioning(true)
+      setTimeout(() => {
+        setIsAdvancedMode(enabled)
+        setIsTransitioning(false)
+      }, 350) // Match animation duration
+    } else {
+      setIsAdvancedMode(enabled)
+    }
+  }
+
   
   return (
   <div className={`${styles.container} ${selectedTheme === "tetr" ? styles.tetrTheme : ""}`} data-theme={selectedTheme}>
     <main className={styles.main}>
 
-      {/* Left Sidebar: History + Prompt Input */}
+      {/* Left Sidebar: History/Output Sections + Prompt Input */}
       <section className={styles.promptSection}>
         <div className={styles.promptSectionInner}>
           
-          <div className={styles.historyHeader}>
-            <p className={styles.promptEyebrow}>History</p>
-          </div>
+          {/* Conditionally render History or Output Sections Panel based on Advanced Mode */}
+          {!isAdvancedMode ? (
+            <>
+              <div className={styles.historyHeader}>
+                <p className={styles.promptEyebrow}>History</p>
+              </div>
 
-          <div className={styles.historyList}>
-            {versions.length === 0 ? (
-              <p>No versions yet</p>
-            ) : (
-              versions.map(version => (
-                <button
-                  key={version._id}
-                  type="button"
-                  onClick={() => handleVersionSelect(version._id)}
-                  className={`${styles.versionItem} ${
-                    selectedVersionId === version._id ? styles.versionItemActive : ""
-                  }`}
-                >
-                  <div className={styles.versionHeader}>
-                    <span className={styles.versionTitle}>
-                      Version {version.versionNumber}
-                    </span>
-                    <span className={styles.versionTimestamp}>
-                      {formatTimestamp(version.createdAt)}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    {version.theme && (
-                      <span style={{
-                        fontSize: '11px',
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        background: version.theme === 'mastersunion' ? 'rgba(57, 181, 215, 0.2)' : 'rgba(240, 195, 0, 0.2)',
-                        color: version.theme === 'mastersunion' ? '#39B5D7' : '#F0C300',
-                        textTransform: 'capitalize',
-                        fontWeight: 500
-                      }}>
-                        {version.theme === 'mastersunion' ? 'Masters Union' : 'Tetr'}
-                      </span>
-                    )}
-                  </div>
-                  <p className={styles.versionPrompt}>{version.prompt}</p>
-                </button>
-              ))
-            )}
-          </div>
+              <div className={styles.historyList}>
+                {versions.length === 0 ? (
+                  <p>No versions yet</p>
+                ) : (
+                  versions.map(version => (
+                    <button
+                      key={version._id}
+                      type="button"
+                      onClick={() => handleVersionSelect(version._id)}
+                      className={`${styles.versionItem} ${
+                        selectedVersionId === version._id ? styles.versionItemActive : ""
+                      }`}
+                    >
+                      <div className={styles.versionHeader}>
+                        <span className={styles.versionTitle}>
+                          Version {version.versionNumber}
+                        </span>
+                        <span className={styles.versionTimestamp}>
+                          {formatTimestamp(version.createdAt)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        {version.theme && (
+                          <span style={{
+                            fontSize: '11px',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            background: version.theme === 'mastersunion' ? 'rgba(57, 181, 215, 0.2)' : 'rgba(240, 195, 0, 0.2)',
+                            color: version.theme === 'mastersunion' ? '#39B5D7' : '#F0C300',
+                            textTransform: 'capitalize',
+                            fontWeight: 500
+                          }}>
+                            {version.theme === 'mastersunion' ? 'Masters Union' : 'Tetr'}
+                          </span>
+                        )}
+                      </div>
+                      <p className={styles.versionPrompt}>{version.prompt}</p>
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <OutputSectionsPanel 
+              html={generatedHtml} 
+              onHtmlChange={handlePreviewHtmlChange}
+              selectedTheme={selectedTheme} 
+            />
+          )}
 
-            {/* Sidebar Prompt Input only after version clicked or generated */}
+            {/* Advanced Mode Toggle - shown only after version clicked or generated */}
             {(selectedVersionId || hasGenerated) && (
-              <PromptInput
-                onGenerate={handleGenerate}
-                isLoading={isLoading}
-                error={error}
-                value={currentPrompt}
-                onPromptChange={setCurrentPrompt}
-                isReadOnly={isPreviewEditMode}
-                variant="sidebar"
+              <AdvancedModeToggle
+                isAdvancedMode={isAdvancedMode}
+                onToggle={handleAdvancedModeToggle}
+                disabled={isLoading || isPreviewEditMode || isTransitioning}
                 selectedTheme={selectedTheme}
-                onThemeChange={setSelectedTheme}
               />
+            )}
+
+            {/* Sidebar Prompt Input - only shown when Advanced Mode is OFF */}
+            {(selectedVersionId || hasGenerated) && (!isAdvancedMode || isTransitioning) && (
+              <div className={`${styles.promptInputWrapper} ${isTransitioning ? styles.hiding : ''}`}>
+                <PromptInput
+                  onGenerate={handleGenerate}
+                  isLoading={isLoading}
+                  error={error}
+                  value={currentPrompt}
+                  onPromptChange={setCurrentPrompt}
+                  isReadOnly={isPreviewEditMode}
+                  variant="sidebar"
+                  selectedTheme={selectedTheme}
+                  onThemeChange={setSelectedTheme}
+                />
+              </div>
             )}
 
          

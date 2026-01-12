@@ -1,0 +1,176 @@
+.container {
+  width: 100%;
+  /* margin-bottom: 16px; */
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--grey9);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  animation: slideInFade 0.4s ease-out;
+  cursor: pointer;
+}
+
+@keyframes slideInFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.container:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--yellow);
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+}
+
+.labelText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.labelTitle {
+  font-family: var(--go-semibold);
+  font-size: 14px;
+  color: var(--white);
+  font-weight: 600;
+}
+
+.labelSubtitle {
+  font-family: var(--go-regular);
+  font-size: 11px;
+  color: var(--grey10);
+  opacity: 0.8;
+  display: none;
+}
+
+.toggle {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  background: var(--grey9);
+  border: none;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.toggle:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggleActive {
+  background: linear-gradient(102deg, #39B6D8 0%, #F7D344 50%, #E38330 100%);
+}
+
+.toggleActive:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.toggleSlider {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: var(--white);
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggleActive .toggleSlider {
+  transform: translateX(22px);
+}
+
+/* Tetr Theme Styles */
+:global([data-theme="tetr"]) .container {
+  background: rgba(0, 72, 34, 0.03);
+  border: 1px solid #E5E5E5;
+}
+
+:global([data-theme="tetr"]) .container:hover {
+  background: rgba(240, 195, 0, 0.05);
+  border-color: #F0C300;
+}
+
+:global([data-theme="tetr"]) .labelTitle {
+  color: #004822;
+  font-family: 'plexSemiBold', sans-serif;
+}
+
+:global([data-theme="tetr"]) .labelSubtitle {
+  color: #737373;
+  font-family: 'plexRegular', sans-serif;
+}
+
+:global([data-theme="tetr"]) .toggle {
+  background: #E5E5E5;
+}
+
+:global([data-theme="tetr"]) .toggle:hover:not(:disabled) {
+  background: #D4D4D4;
+}
+
+:global([data-theme="tetr"]) .toggleActive {
+  background: #F0C300;
+}
+
+:global([data-theme="tetr"]) .toggleActive:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+:global([data-theme="tetr"]) .toggleSlider {
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Styles */
+@media (max-width: 767px) {
+  .container {
+    padding: 12px 14px;
+  }
+
+  .labelTitle {
+    font-size: 13px;
+  }
+
+  .labelSubtitle {
+    font-size: 10px;
+  }
+
+  .toggle {
+    width: 44px;
+    height: 24px;
+  }
+
+  .toggleSlider {
+    width: 18px;
+    height: 18px;
+  }
+
+  .toggleActive .toggleSlider {
+    transform: translateX(20px);
+  }
+}
