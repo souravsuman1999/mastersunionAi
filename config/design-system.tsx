@@ -1412,6 +1412,12 @@ Always include this vanilla JS validation block after the form:
 }
 
 /* Swiper Usage Example Structure:
+MANDATORY: When using Swiper, you MUST include BOTH the CDN link in <head> AND the initialization script:
+
+IN <head>:
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+
+HTML STRUCTURE:
 <div class="swiper">
   <div class="swiper-wrapper">
     <div class="swiper-slide">
@@ -1426,6 +1432,7 @@ Always include this vanilla JS validation block after the form:
   <div class="swiper-button-next"></div>
 </div>
 
+BEFORE </body> (MANDATORY - DO NOT SKIP):
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script>
   const swiper = new Swiper('.swiper', {
@@ -1450,6 +1457,8 @@ Always include this vanilla JS validation block after the form:
     },
   });
 </script>
+
+IF YOU USE SWIPER AND DON'T INCLUDE THE CDN SCRIPT AND INITIALIZATION, THE CAROUSEL WILL NOT WORK!
 */
 
 
@@ -2124,7 +2133,7 @@ CSS FOR MASTERS MARQUEE (when no categories):
   }
 }
 
-JavaScript for Masters Tabs:
+JavaScript for Masters Tabs (MANDATORY - MUST INCLUDE IN <script> TAG):
 document.addEventListener('DOMContentLoaded', function() {
   const tabs = document.querySelectorAll('.mastersTab');
   const panels = document.querySelectorAll('.mastersTabPanel');
@@ -2148,7 +2157,11 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-IMPORTANT: You MUST implement either tabs (with categories) or infinite marquee (without categories) for ALL masters sections. There is no alternative - this is mandatory.
+CRITICAL RULES:
+1. You MUST implement either tabs (with categories) or infinite marquee (without categories) for ALL masters sections
+2. If you use tabs, you MUST include the JavaScript above in your <script> tag
+3. If you use marquee, you MUST include the @keyframes marqueeScroll animation and apply it
+4. TABS AND CAROUSELS MUST BE FUNCTIONAL - not just styled to look interactive
 */
   `;
 }
@@ -2174,6 +2187,7 @@ IMPORTANT RULES:
 - Use querySelector/querySelectorAll with clear class or data attributes for JS hooks—do NOT rely on IDs that are not present
 - NEVER include comments, markdown or explanations
 - ALWAYS implement interactive behavior mentioned or implied in the prompt (e.g. toggles, accordions, counters, sliders, form validation, CTA hover effects, tabs). If nothing is explicitly interactive, add at least one subtle enhancement such as smooth scrolling or animated statistics.
+- CRITICAL: ALL tabs, carousels, accordions, and interactive elements MUST have working JavaScript. Do NOT generate UI that looks interactive but doesn't work.
 - Every form you generate must ship with client-side validation (required fields, inline error handling, and helpful messaging) without relying on external libraries.
 - Every form must end with a primary Submit button labeled "Submit" that uses the '.primaryYellowBtn' style from this design system.
 - Always include the provided validation structure and script from the Form System section so forms behave consistently without additional prompts.
@@ -3515,6 +3529,12 @@ Always include this vanilla JS validation block after the form:
    SWIPER USAGE EXAMPLE
    ============================================ */
 /*
+MANDATORY: When using Swiper, you MUST include BOTH the CDN link in <head> AND the initialization script:
+
+IN <head>:
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+
+HTML STRUCTURE:
 <div class="swiper">
   <div class="swiper-wrapper">
     <div class="swiper-slide">
@@ -3529,6 +3549,7 @@ Always include this vanilla JS validation block after the form:
   <div class="swiper-button-next"></div>
 </div>
 
+BEFORE </body> (MANDATORY - DO NOT SKIP):
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script>
   const swiper = new Swiper('.swiper', {
@@ -3553,6 +3574,8 @@ Always include this vanilla JS validation block after the form:
     },
   });
 </script>
+
+IF YOU USE SWIPER AND DON'T INCLUDE THE CDN SCRIPT AND INITIALIZATION, THE CAROUSEL WILL NOT WORK!
 */
   `;
 }

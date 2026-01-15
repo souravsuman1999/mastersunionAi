@@ -39,6 +39,27 @@ IMPORTANT OUTPUT RULES:
 - Maintain design consistency across versions
 - If an image is provided, use it as a reference for design, layout, colors, styling, or content. Analyze the image carefully and incorporate relevant visual elements, color schemes, layout patterns, or design inspiration into the generated webpage.
 
+CRITICAL INTERACTIVITY RULES:
+- ALL interactive components (tabs, accordions, carousels, dropdowns, modals, etc.) MUST be fully functional with proper JavaScript
+- For Swiper.js carousels: ALWAYS include the Swiper CDN script AND initialize with new Swiper() in the <script> tag
+- For tabs: ALWAYS include the tab switching JavaScript that adds/removes 'active' classes on click
+- For accordions: ALWAYS include click handlers that toggle content visibility
+- For modals/popups: ALWAYS include open/close functionality with proper event listeners
+- Test all interactivity mentally before outputting - if a button or tab doesn't have a click handler, add it
+- DO NOT generate non-functional UI elements - every interactive element must have working JavaScript
+
+SWIPER.JS REQUIREMENTS (when using carousels):
+1. In <head>: <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+2. Before </body>: <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+3. After Swiper script: <script> with new Swiper('.swiper', { /* config */ }) initialization
+4. Use proper Swiper HTML structure: .swiper > .swiper-wrapper > .swiper-slide
+
+TABS REQUIREMENTS (when using tabs):
+1. Tab buttons must have data attributes (e.g., data-category="business") and click event listeners
+2. Tab panels must have matching data attributes and 'active' class toggling
+3. JavaScript must remove 'active' from all tabs/panels, then add to clicked tab/panel
+4. Example structure from design system must be followed exactly
+
 Create beautiful, functional webpages with good typography, spacing, and visual hierarchy while strictly following the design system.`
 
   const startTime = Date.now()
@@ -102,64 +123,139 @@ Return the complete updated HTML document (including <!DOCTYPE>, <html>, <head>,
 
   // Create AbortController for timeout
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout
+  const timeoutId = setTimeout(() => controller.abort(), 300000) // 5 minute timeout
 
-  try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 18000, // Reduced from 18000 for faster generation
-        messages: [
-          {
-            role: "user",
-            content: content,
-          },
-        ],
-        system: systemPrompt,
-      }),
-      signal: controller.signal,
-    })
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      clearTimeout(timeoutId)
-      const errorText = await response.text()
-      let errorData
-      try {
-        errorData = JSON.parse(errorText)
-      } catch {
-        errorData = { error: { message: errorText } }
+  // Retry logic for transient errors
+  const maxRetries = 3
+  let lastError: any = null
+  let data: any = null
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        // Exponential backoff: 2s, 4s, 8s
+        const delay = Math.min(2000 * Math.pow(2, attempt - 1), 10000)
+        console.log(`[v0] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms delay`)
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
-      
-      console.error("[v0] Anthropic API error:", {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData,
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-5",
+          max_tokens: 18000, // Reduced from 18000 for faster generation
+          messages: [
+            {
+              role: "user",
+              content: content,
+            },
+          ],
+          system: systemPrompt,
+        }),
+        signal: controller.signal,
       })
-      
-      if (response.status === 401) {
-        const errorMessage = errorData?.error?.message || "Invalid API key"
-        throw new Error(
-          `401 Unauthorized: ${errorMessage}. ` +
-          "Please verify your ANTHROPIC_API_KEY is correct and set in Vercel environment variables. " +
-          "Make sure to redeploy after adding the variable."
-        )
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        let errorData
+        try {
+          errorData = JSON.parse(errorText)
+        } catch {
+          errorData = { error: { message: errorText } }
+        }
+        
+        console.error(`[v0] Anthropic API error (attempt ${attempt + 1}):`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+        })
+        
+        // Handle specific error types
+        if (response.status === 401) {
+          clearTimeout(timeoutId)
+          const errorMessage = errorData?.error?.message || "Invalid API key"
+          throw new Error(
+            `401 Unauthorized: ${errorMessage}. ` +
+            "Please verify your ANTHROPIC_API_KEY is correct and set in Vercel environment variables. " +
+            "Make sure to redeploy after adding the variable."
+          )
+        }
+        
+        // Retry on transient errors (429 rate limit, 529 overloaded, 503 service unavailable)
+        const isRetryableError = response.status === 429 || response.status === 529 || response.status === 503
+        if (isRetryableError && attempt < maxRetries - 1) {
+          lastError = { status: response.status, errorData }
+          console.log(`[v0] Retryable error ${response.status}, will retry...`)
+          continue // Retry the request
+        }
+        
+        // Non-retryable error or last attempt
+        clearTimeout(timeoutId)
+        if (response.status === 529) {
+          throw new Error(
+            "Claude API is temporarily overloaded. Please try again in a few moments. " +
+            "If this persists, the API may be experiencing high traffic."
+          )
+        }
+        if (response.status === 429) {
+          throw new Error(
+            "Rate limit exceeded. Please wait a moment and try again. " +
+            "You may be making too many requests too quickly."
+          )
+        }
+        throw new Error(`Claude API error: ${response.status} ${response.statusText}`)
+      }
+
+      // Success - parse response and break out of retry loop
+      data = await response.json()
+      clearTimeout(timeoutId)
+      break
+    } catch (error: any) {
+      // If it's an abort error (timeout) or non-retryable error, throw immediately
+      if (error.name === 'AbortError') {
+        clearTimeout(timeoutId)
+        throw new Error("Request timeout: Generation took too long. Please try again with a simpler prompt.")
       }
       
-      throw new Error(`Claude API error: ${response.status} ${response.statusText}`)
+      // If it's a non-retryable error (like 401), throw it
+      if (error.message && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
+        throw error
+      }
+      
+      // If this is the last attempt, throw the error
+      if (attempt === maxRetries - 1) {
+        clearTimeout(timeoutId)
+        if (lastError) {
+          if (lastError.status === 529) {
+            throw new Error(
+              "Claude API is temporarily overloaded after multiple retries. Please try again in a few moments."
+            )
+          }
+          throw new Error(`Claude API error after ${maxRetries} attempts: ${lastError.status}`)
+        }
+        throw error
+      }
+      
+      // Otherwise, continue to retry
+      lastError = error
+      console.log(`[v0] Request failed (attempt ${attempt + 1}), will retry...`, error.message)
     }
+  }
 
-    const data = await response.json()
-    clearTimeout(timeoutId)
-    const duration = Date.now() - startTime
-    console.log("[v0] Claude API response received successfully")
-    console.log("[v0] Generation took:", duration, "ms (", (duration / 1000).toFixed(2), "seconds)")
+  // Process the successful response
+  if (!data) {
+    throw new Error("Failed to get response from Claude API after retries")
+  }
+
+  const duration = Date.now() - startTime
+  console.log("[v0] Claude API response received successfully")
+  console.log("[v0] Generation took:", duration, "ms (", (duration / 1000).toFixed(2), "seconds)")
 
   const textSegments: string[] = Array.isArray(data?.content)
     ? data.content
@@ -179,14 +275,7 @@ Return the complete updated HTML document (including <!DOCTYPE>, <html>, <head>,
     html = html.replace(/^```\n/, "").replace(/\n```$/, "")
   }
 
-    return html
-  } catch (error: any) {
-    clearTimeout(timeoutId)
-    if (error.name === 'AbortError') {
-      throw new Error("Request timeout: Generation took too long. Please try again with a simpler prompt.")
-    }
-    throw error
-  }
+  return html
 }
 
 export async function POST(request: NextRequest) {
