@@ -65,6 +65,13 @@
   flex-shrink: 0;
 }
 
+.headerContent {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .eyebrow {
   font-family: var(--go-medium);
   font-size: 14px;
@@ -253,6 +260,34 @@
   text-overflow: ellipsis;
 }
 
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--grey9);
+  border-radius: 6px;
+  color: var(--grey10);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+  opacity: 0.6;
+}
+
+.deleteButton:hover {
+  background: rgba(231, 76, 60, 0.1);
+  border-color: #E74C3C;
+  color: #E74C3C;
+  opacity: 1;
+}
+
+.deleteButton:active {
+  transform: scale(0.95);
+}
+
 .emptyState {
   display: flex;
   flex-direction: column;
@@ -299,6 +334,51 @@
 .hint svg {
   flex-shrink: 0;
   color: var(--yellow);
+}
+
+.undoButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--grey10);
+  border: 1px solid var(--grey9);
+  border-radius: 6px;
+  font-family: var(--go-medium);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  animation: fadeIn 0.2s ease-out;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.undoButton:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.undoButton:active {
+  transform: scale(0.98);
+}
+
+.undoButton svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
 }
 
 /* Tetr Theme Styles */
@@ -408,6 +488,29 @@
   color: #F0C300;
 }
 
+:global([data-theme="tetr"]) .undoButton {
+  color: #737373;
+  border-color: #E5E5E5;
+  font-family: 'plexMedium', sans-serif;
+}
+
+:global([data-theme="tetr"]) .undoButton:hover {
+  background: rgba(240, 195, 0, 0.05);
+  border-color: #F0C300;
+  color: #F0C300;
+}
+
+:global([data-theme="tetr"]) .deleteButton {
+  border-color: #E5E5E5;
+  color: #737373;
+}
+
+:global([data-theme="tetr"]) .deleteButton:hover {
+  background: rgba(231, 76, 60, 0.1);
+  border-color: #E74C3C;
+  color: #E74C3C;
+}
+
 :global([data-theme="tetr"]) .sectionsList::-webkit-scrollbar-thumb {
   background: rgba(0, 72, 34, 0.15);
 }
@@ -454,5 +557,33 @@
   .hint {
     padding: 10px;
     font-size: 11px;
+  }
+
+  .deleteButton {
+    width: 24px;
+    height: 24px;
+  }
+
+  .deleteButton svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .headerContent {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .undoButton {
+    padding: 5px 10px;
+    font-size: 11px;
+    gap: 4px;
+    align-self: flex-start;
+    margin-top: 0;
+  }
+
+  .undoButton svg {
+    width: 12px;
+    height: 12px;
   }
 }

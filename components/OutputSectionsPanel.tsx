@@ -26,10 +26,19 @@ export default function OutputSectionsPanel({
   const [draggedItem, setDraggedItem] = useState<Section | null>(null)
   const [dragOverItem, setDragOverItem] = useState<Section | null>(null)
   const [activeMode, setActiveMode] = useState<"components" | "rearrange">("components") // Components open by default
+  const [deletedSection, setDeletedSection] = useState<{ section: Section; originalIndex: number } | null>(null)
+  const [showUndo, setShowUndo] = useState(false)
+  const isManualUpdateRef = useRef(false)
   const iframeRefs = useRef<{ [key: string]: HTMLIFrameElement | null }>({})
 
   // Parse HTML and extract unique sections with full styling
   useEffect(() => {
+    // Skip parsing if we're doing a manual update (undo/delete/reorder)
+    if (isManualUpdateRef.current) {
+      isManualUpdateRef.current = false
+      return
+    }
+
     if (!html || html.trim() === "") {
       setSections([])
       return
@@ -170,12 +179,17 @@ export default function OutputSectionsPanel({
       order: index + 1
     }))
 
+    // Mark as manual update to prevent useEffect from re-parsing
+    isManualUpdateRef.current = true
     setSections(reorderedSections)
   }
 
   // Handle drag end - clean up and update HTML
   const handleDragEnd = (e: React.DragEvent) => {
     e.preventDefault()
+    
+    // Mark as manual update to prevent useEffect from re-parsing
+    isManualUpdateRef.current = true
     
     // Update HTML with new section order
     if (sections.length > 0) {
@@ -215,6 +229,107 @@ ${reorderedBodyContent}
     setDragOverItem(null)
   }
 
+  // Handle section delete
+  const handleDeleteSection = (sectionId: string) => {
+    // Find the section to delete and its index
+    const sectionIndex = sections.findIndex(s => s.id === sectionId)
+    const sectionToDelete = sections[sectionIndex]
+    
+    if (!sectionToDelete) return
+
+    // Store the deleted section for undo
+    setDeletedSection({ section: sectionToDelete, originalIndex: sectionIndex })
+    setShowUndo(true)
+
+    // Remove the section from the list
+    const newSections = sections.filter(s => s.id !== sectionId)
+    
+    // Update order numbers
+    const reorderedSections = newSections.map((s, index) => ({
+      ...s,
+      order: index + 1
+    }))
+
+    // Mark as manual update to prevent useEffect from re-parsing
+    isManualUpdateRef.current = true
+    setSections(reorderedSections)
+
+    // Update HTML by removing the deleted section
+    if (newSections.length > 0) {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(html, "text/html")
+      const headContent = doc.head ? doc.head.innerHTML : ""
+      
+      // Extract just the body content from each remaining section's full HTML
+      const reorderedBodyContent = reorderedSections.map(section => {
+        const sectionDoc = parser.parseFromString(section.htmlContent, "text/html")
+        return sectionDoc.body ? sectionDoc.body.innerHTML : ""
+      }).join("\n")
+      
+      // Reconstruct the full HTML
+      const newHtml = `<!DOCTYPE html>
+<html>
+<head>
+${headContent}
+</head>
+<body>
+${reorderedBodyContent}
+</body>
+</html>`
+      
+      onHtmlChange(newHtml)
+    } else {
+      // If no sections left, set empty HTML
+      onHtmlChange("")
+    }
+  }
+
+  // Handle undo delete
+  const handleUndoDelete = () => {
+    if (!deletedSection) return
+
+    // Restore the section at its original position
+    const newSections = [...sections]
+    newSections.splice(deletedSection.originalIndex, 0, deletedSection.section)
+
+    // Update order numbers
+    const reorderedSections = newSections.map((s, index) => ({
+      ...s,
+      order: index + 1
+    }))
+
+    // Mark as manual update to prevent useEffect from re-parsing
+    isManualUpdateRef.current = true
+    setSections(reorderedSections)
+    setShowUndo(false)
+    setDeletedSection(null)
+
+    // Update HTML with restored section
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, "text/html")
+    const headContent = doc.head ? doc.head.innerHTML : ""
+    
+    // Extract just the body content from each section's full HTML
+    const reorderedBodyContent = reorderedSections.map(section => {
+      const sectionDoc = parser.parseFromString(section.htmlContent, "text/html")
+      return sectionDoc.body ? sectionDoc.body.innerHTML : ""
+    }).join("\n")
+    
+    // Reconstruct the full HTML
+    const newHtml = `<!DOCTYPE html>
+<html>
+<head>
+${headContent}
+</head>
+<body>
+${reorderedBodyContent}
+</body>
+</html>`
+    
+    onHtmlChange(newHtml)
+  }
+
+
   return (
     <div className={styles.container}>
       {/* Toggle between Components and Rearrange */}
@@ -248,8 +363,33 @@ ${reorderedBodyContent}
       ) : (
         <>
           <div className={styles.header}>
-            <p className={styles.eyebrow}>Output Sections ({sections.length})</p>
-            <p className={styles.subtitle}>Drag to reorder</p>
+            <div className={styles.headerContent}>
+              <div>
+                <p className={styles.eyebrow}>Output Sections ({sections.length})</p>
+                <p className={styles.subtitle}>Drag to reorder</p>
+              </div>
+              {/* Undo button inline with header */}
+              {showUndo && deletedSection && (
+                <button
+                  type="button"
+                  onClick={handleUndoDelete}
+                  className={styles.undoButton}
+                  aria-label="Undo delete"
+                  title="Undo delete"
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M3 8L7 4M3 8L7 12M3 8H13"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Undo
+                </button>
+              )}
+            </div>
           </div>
 
           <div className={styles.sectionsList}>
@@ -312,6 +452,26 @@ ${reorderedBodyContent}
                   </div>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDeleteSection(section.id)
+                }}
+                className={styles.deleteButton}
+                title="Delete section"
+                aria-label="Delete section"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M12 4L4 12M4 4L12 12"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
           ))
         )}
