@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import styles from "./OutputSectionsPanel.module.css"
+import ComponentsPanel from "./ComponentsPanel"
 
 interface Section {
   id: string
@@ -24,6 +25,7 @@ export default function OutputSectionsPanel({
   const [sections, setSections] = useState<Section[]>([])
   const [draggedItem, setDraggedItem] = useState<Section | null>(null)
   const [dragOverItem, setDragOverItem] = useState<Section | null>(null)
+  const [activeMode, setActiveMode] = useState<"components" | "rearrange">("components") // Components open by default
   const iframeRefs = useRef<{ [key: string]: HTMLIFrameElement | null }>({})
 
   // Parse HTML and extract unique sections with full styling
@@ -215,12 +217,42 @@ ${reorderedBodyContent}
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <p className={styles.eyebrow}>Output Sections ({sections.length})</p>
-        <p className={styles.subtitle}>Drag to reorder</p>
+      {/* Toggle between Components and Rearrange */}
+      <div className={styles.modeToggle}>
+        <button
+          type="button"
+          onClick={() => setActiveMode("components")}
+          className={`${styles.modeButton} ${
+            activeMode === "components" ? styles.modeButtonActive : ""
+          }`}
+        >
+          Components
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMode("rearrange")}
+          className={`${styles.modeButton} ${
+            activeMode === "rearrange" ? styles.modeButtonActive : ""
+          }`}
+        >
+          Rearrange
+        </button>
       </div>
 
-      <div className={styles.sectionsList}>
+      {activeMode === "components" ? (
+        <ComponentsPanel
+          html={html}
+          onHtmlChange={onHtmlChange}
+          selectedTheme={selectedTheme}
+        />
+      ) : (
+        <>
+          <div className={styles.header}>
+            <p className={styles.eyebrow}>Output Sections ({sections.length})</p>
+            <p className={styles.subtitle}>Drag to reorder</p>
+          </div>
+
+          <div className={styles.sectionsList}>
         {sections.length === 0 ? (
           <div className={styles.emptyState}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -285,13 +317,15 @@ ${reorderedBodyContent}
         )}
       </div>
 
-      <div className={styles.hint}>
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M8 11.5V8M8 5.5H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-        <span>Drag sections to reorder the output</span>
-      </div>
+          <div className={styles.hint}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M8 11.5V8M8 5.5H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <span>Drag sections to reorder the output</span>
+          </div>
+        </>
+      )}
     </div>
   )
 }

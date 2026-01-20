@@ -8,6 +8,47 @@
   animation: fadeInScale 0.4s ease-out;
 }
 
+.modeToggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 4px;
+  background: var(--black5);
+  border: 1px solid var(--grey9);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.modeButton {
+  flex: 1;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--go-medium);
+  font-size: 13px;
+  color: var(--grey10);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modeButton:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modeButtonActive {
+  background: var(--yellow);
+  color: var(--black);
+  font-weight: 500;
+}
+
+.modeButtonActive:hover {
+  background: var(--yellow);
+  color: var(--black);
+  opacity: 0.9;
+}
+
 @keyframes fadeInScale {
   from {
     opacity: 0;
@@ -261,6 +302,31 @@
 }
 
 /* Tetr Theme Styles */
+:global([data-theme="tetr"]) .modeToggle {
+  background: #ffffff;
+  border: 1px solid #E5E5E5;
+}
+
+:global([data-theme="tetr"]) .modeButton {
+  color: #737373;
+}
+
+:global([data-theme="tetr"]) .modeButton:hover {
+  color: #004822;
+  background: rgba(240, 195, 0, 0.05);
+}
+
+:global([data-theme="tetr"]) .modeButtonActive {
+  background: #F0C300;
+  color: #090909;
+}
+
+:global([data-theme="tetr"]) .modeButtonActive:hover {
+  background: #F0C300;
+  color: #090909;
+  opacity: 0.9;
+}
+
 :global([data-theme="tetr"]) .eyebrow {
   color: #004822;
   font-family: 'plexMedium', sans-serif;
@@ -352,6 +418,17 @@
 
 /* Responsive Styles */
 @media (max-width: 767px) {
+  .modeToggle {
+    margin-bottom: 12px;
+    gap: 6px;
+    padding: 3px;
+  }
+
+  .modeButton {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
   .sectionItem {
     padding: 10px;
     gap: 10px;
