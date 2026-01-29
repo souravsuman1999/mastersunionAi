@@ -730,7 +730,7 @@ textarea {
     font: 16px 'go-medium';
     line-height: 150% !important;
     border-radius: 54px;
-  }
+  } 
 }
 `
 
