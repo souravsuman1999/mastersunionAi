@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import styles from "./ComponentsPanel.module.css"
+import { componentStyles } from "./component-styles"
 
 interface ComponentsPanelProps {
   html: string
@@ -60,7 +61,7 @@ Make Your Company  New‑age
                         fill="none">
                         <path
                             d="M16.875 9.00002C16.8755 9.191 16.8265 9.37886 16.7329 9.54532C16.6392 9.71178 16.5041 9.85117 16.3406 9.94994L6.21 16.1473C6.0392 16.2519 5.84358 16.309 5.64334 16.3127C5.44309 16.3164 5.24549 16.2666 5.07094 16.1684C4.89805 16.0717 4.75402 15.9307 4.65368 15.76C4.55333 15.5892 4.50029 15.3947 4.5 15.1967L4.5 2.80337C4.50029 2.60529 4.55333 2.41086 4.65368 2.24008C4.75402 2.0693 4.89805 1.92832 5.07094 1.83166C5.24549 1.73346 5.44309 1.68365 5.64334 1.68736C5.84358 1.69107 6.0392 1.74816 6.21 1.85275L16.3406 8.05009C16.5041 8.14886 16.6392 8.28826 16.7329 8.45471C16.8265 8.62117 16.8755 8.80903 16.875 9.00002Z"
-                            fill="black"></path>
+                            fill="white"></path>
                     </svg>
 
                     Watch Now
@@ -70,86 +71,9 @@ Make Your Company  New‑age
     </section>`,
     preview: "https://images.mastersunion.link/uploads/11122025/v1/Frame113.webp"
   },
+  
   {
     id: "hero-2",
-    name: "Hero Section 2",
-    html: `<section class="homeHeroSection">
-        <div class="bgHeroVideoWrap">
-            <div class="animationweb">
-                <img src="https://images.mastersunion.link/uploads/23122025/v1/herosection1.webp" fetchpriority="high"
-                    class="bgHeroImage mob-hide" alt="Learn business">
-                <img src="https://images.mastersunion.link/uploads/24122025/v1/Group1171280098.webp"
-                    fetchpriority="high" class="bgHeroImage mob-hide" alt="Learn business">
-
-            </div>
-            <div class="animationmob mobVisible">
-                <img src="https://images.mastersunion.link/uploads/23122025/v1/herosection3.webp" fetchpriority="high"
-                    class="bgHeroImage " alt="mobileHomepageBackground">
-                <img src="https://images.mastersunion.link/uploads/24122025/v1/Frame1321317322.webp"
-                    fetchpriority="high" class="bgHeroImage " alt="mobileHomepageBackground">
-
-            </div>
-        </div>
-        <div class="container">
-            <div class="overlayHero">
-                <div class="heroLeft">
-                    <h1 class="homeheroHeading"> Learn <br> <span class="mobhr"> by </span>
-
-                        <span class="muvectorhero"> Doing </span>
-                    </h1>
-
-
-                    <div class="muHeroButtonWrap">
-                        <div class="heroRightButtons">
-                            <a href="https://www.youtube.com/watch?feature=shared&v=IyMIGNBmRrg" target="_blank"
-                                class="btnWhite">
-                                Watch Intro Video
-                                <span class="arrowWrap">
-                                    <img class="arrow arrow1"
-                                        src="https://images.mastersunion.link/uploads/18022025/v1/black_arrow_image.svg"
-                                        alt="arrow" />
-                                    <img class="arrow arrow2"
-                                        src="https://images.mastersunion.link/uploads/18022025/v1/black_arrow_image.svg"
-                                        alt="arrow" />
-                                </span>
-                            </a>
-                            <a href="https://files.mastersunion.link/media/Masters_Union_Year_Book.pdf" target="_blank"
-                                class="btnWhite blurBg">
-
-                                Download Yearbook
-
-                                <svg class="icon-Download" xmlns="https://www.w3.org/2000/svg" width="19" height="20"
-                                    viewBox="0 0 19 20" fill="none" plerdy-tracking-id="79912533601">
-                                    <!-- Arrow path -->
-                                    <path class="arrowDownload"
-                                        d="M9.07992 11.6076C9.13506 11.6628 9.20055 11.7066 9.27263 11.7365C9.34471 11.7663 9.42197 11.7817 9.5 11.7817C9.57803 11.7817 9.65529 11.7663 9.72737 11.7365C9.79945 11.7066 9.86494 11.6628 9.92008 11.6076L12.8888 8.63883C12.944 8.58366 12.9878 8.51817 13.0176 8.44609C13.0475 8.37402 13.0628 8.29677 13.0628 8.21875C13.0628 8.14073 13.0475 8.06348 13.0176 7.99141C12.9878 7.91933 12.944 7.85384 12.8888 7.79867C12.8337 7.74351 12.7682 7.69975 12.6961 7.66989C12.624 7.64004 12.5468 7.62467 12.4688 7.62467C12.3907 7.62467 12.3135 7.64004 12.2414 7.66989C12.1693 7.69975 12.1038 7.74351 12.0487 7.79867L10.0938 9.75434V2.875C10.0938 2.71753 10.0312 2.56651 9.91985 2.45516C9.8085 2.34381 9.65747 2.28125 9.5 2.28125C9.34253 2.28125 9.19151 2.34381 9.08016 2.45516C8.96881 2.56651 8.90625 2.71753 8.90625 2.875V9.75434L6.95133 7.79867C6.83992 7.68726 6.68881 7.62467 6.53125 7.62467C6.37369 7.62467 6.22258 7.68726 6.11117 7.79867C5.99976 7.91008 5.93717 8.06119 5.93717 8.21875C5.93717 8.37631 5.99976 8.52742 6.11117 8.63883L9.07992 11.6076Z"
-                                        fill="#090909"></path>
-
-                                    <!-- Bottom line path -->
-                                    <path
-                                        d="M16.625 11.1875V15.9375C16.625 16.095 16.5624 16.246 16.4511 16.3573C16.3397 16.4687 16.1887 16.5312 16.0312 16.5312H2.96875C2.81128 16.5312 2.66026 16.4687 2.54891 16.3573C2.43756 16.246 2.375 16.095 2.375 15.9375V11.1875C2.375 11.03 2.43756 10.879 2.54891 10.7677C2.66026 10.6563 2.81128 10.5938 2.96875 10.5938C3.12622 10.5938 3.27724 10.6563 3.38859 10.7677C3.49994 10.879 3.5625 11.03 3.5625 11.1875V15.3438H15.4375V11.1875C15.4375 11.03 15.5001 10.879 15.6114 10.7677C15.7228 10.6563 15.8738 10.5938 16.0312 10.5938C16.1887 10.5938 16.3397 10.6563 16.4511 10.7677C16.5624 10.879 16.625 11.03 16.625 11.1875Z"
-                                        fill="#090909"></path>
-                                </svg>
-                            </a>
-                        </div>
-                        <div class="muHeroLogos">
-                            <img src="https://images.mastersunion.link/uploads/28082025/v1/BSISPartners.webp"
-                                alt="BSIS Partners">
-                            <img src="https://files.mastersunion.link/media/img/Legacy-tbm/footer-Pic.webp"
-                                alt="EFMD Global Member">
-                            <img src="https://files.mastersunion.link/media/img/Legacy-tbm/footer-PicUpdate.webp"
-                                alt="Business Education Alliance">
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>`,
-    preview: "https://images.mastersunion.link/uploads/23122025/v1/herosection1.webp"
-  },
-  {
-    id: "hero-3",
     name: "Hero Section 3",
     html: `<div class="intersectHero techHeroSection">
 
@@ -211,466 +135,6 @@ Make Your Company  New‑age
   }
 ]
 
-// Hero Section Styles - using exact code provided
-const heroSectionStyles = `
-<style>
-     .homeHeroSection {
-    position: relative;
-    z-index: 9;
-    padding: 0 0 0;
-    overflow: hidden;
-    min-height: 100vh;
-    background: var(--black);
-
-    .homeheroHeading {
-      font: 128px "go-regular";
-      color: var(--white);
-      line-height: 100%;
-
-      .muvectorhero {
-        font-family: "fraunces", serif;
-        font-weight: 350;
-        color: var(--white);
-        line-height: 100%;
-        font-style: italic;
-      }
-    }
-
-    .overlayHero {
-      position: absolute;
-      bottom: 80px;
-      width: 100%;
-      z-index: 10;
-    }
-
-    .heroRightButtons {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-    }
-
-    .muHeroButtonWrap {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 75px;
-      align-items: center;
-    }
-
-    .muHeroLogos {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-    }
-
-    .muHeroLogos img {
-      max-width: 86px;
-    }
-
-    .muHeroLogos img:first-child {
-      max-width: 63px;
-    }
-  }
-
-      .heroSection {
-        position: relative;
-        line-height: 0;
-        z-index: 9;
-        padding: 0;
-        overflow: hidden;
-        /* min-height: 100vh; */
-        background: #020202;
-
-        .imgH90vh {
-            height: 90vh;
-        }
-
-        .overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to top, rgba(0, 0, 0, 1.9), transparent);
-            pointer-events: none;
-        }
-
-
-        .heroSectionContent .go-HeroSubtitle {
-            color: var(--grey4);
-        }
-
-        .heroSectionContent {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translate(-50%, -30%);
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-            text-align: center;
-            width: 100%;
-        }
-
-        .go-HeroSubtitle {
-            margin-top: 16px;
-
-            .textHighlight {
-                color: var(--white);
-            }
-        }
-
-        .heroSectionBtnWrap {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            margin-top: 24px;
-            margin-top: 24px;
-        }
-
-        .heroSectionImg {
-            /* height: 90vh; */
-
-            .video-container {
-                max-width: 100%;
-
-                video {
-                    width: 100%;
-                }
-            }
-
-
-            .mobilevideo {
-                width: 100%;
-            }
-
-        }
-
-
-    }
-
-    .intersectHero {
-                background: var(--black);
-        padding: 0px 0;
-        line-height: 0;
-
-            .techHeroSectionWrapper {
-        position: relative;
-    }
-    .masterImage {
-    width: 100%;
-    position: relative;
-    line-height: 0;
-    border-radius: 8px;
-    overflow: hidden;
-}
-    .studentWrapperHeadingDiv {
-        position: absolute;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        left: 100px;
-        z-index: 5;
-        bottom: 77px;
-    }
-        .heroHeading {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-        .studentPara {
-        font-size: 24px;
-        font-family: var(--go-regular);
-        line-height: 120%;
-    }
-        .font_italic {
-        font-family: "Fraunces", serif;
-    }
-        .studentPBold {
-        font-size: 28px;
-        line-height: 120%;
-    }
-        .font_italic {
-        font-style: italic !important;
-    }        .intersectHeroBtn {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            width: 100%;
-            margin-top: 16px;
-        }
-            .whiteFillButton {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 20px;
-        font-size: 16px;
-        font-family: var(--go-medium);
-        line-height: 24px;
-        color: var(--black);
-        cursor: pointer;
-        background: var(--white);
-        border-radius: 54px;
-        width: 100%;
-        max-width: fit-content;
-    }
-
-
-    }
-
-
-      @media (max-width: 767px){
-
-            .heroSection {
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
-            max-height: 90vh !important;
-            overflow: hidden;
-
-            .heroSectionContent {
-                width: 100%;
-                padding: 0 12px;
-                transform: translate(-50%, -20%);
-                gap: 20px;
-            }
-
-            .heroSectionContent.heroContentMob {
-                transform: translate(-50%, -50%);
-                gap: 8px;
-            }
-
-            .heroSectionBtnWrap {
-                width: 100%;
-                align-items: flex-start;
-                gap: 12px;
-                flex-direction: column;
-
-
-                a,
-                button {
-                    width: 100%;
-                    line-height: 0 !important;
-                }
-            }
-
-            .heroHeadingWrap {
-                gap: 8px;
-            }
-
-            .heroSectionImg {
-                height: 80vh;
-            }
-        }
-
-
-            .homeHeroSection {
-            .heroSubHeading {
-                font-size: 14px;
-            }
-
-            .homeheroHeading {
-                font: 30px "go-regular";
-
-                .FrHeading {
-                    font-size: 32px;
-
-                }
-            }
-
-            .overlayHero {
-                /* padding-inline: 16px; */
-                bottom: 20px;
-                left: 0;
-            }
-
-            .bgHeroImage {
-                filter: grayscale(0);
-            }
-
-            .bgHeroVideoWrap {
-                height: 90vh;
-            }
-
-            .heroTag {
-                padding-block: 18px;
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-                margin-bottom: unset;
-            }
-
-            .heroImpactButton {
-                gap: 8px;
-                align-items: center;
-                padding: 8px 14px;
-            }
-
-            .impactText {
-                font-size: 13px;
-                font-family: var(--go-medium);
-            }
-
-            .impactMob {
-                font-size: 10px;
-                font-family: var(--go-regular);
-                line-height: 120%;
-                text-transform: uppercase;
-                align-items: center;
-                letter-spacing: 1px;
-                color: var(--grey4);
-            }
-
-            .mobBtn {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                justify-content: center;
-                align-items: center;
-            }
-
-                        .homeheroHeading {
-                font-size: 96px;
-                width: fit-content;
-                display: flex;
-                flex-direction: column;
-                align-items: end;
-                justify-content: end;
-                
-            color: var(--white);
-            line-height: 100%;
-            }
-                .muvectorhero {
-        font-weight: 300 !important;
-            position: relative;
-    z-index: 1;
-    }
-    .homeHeroSection .muHeroButtonWrap {
-            flex-direction: column;
-            gap: 20px;
-        }
-        .homeHeroSection .muHeroButtonWrap
- {
-            flex-direction: column;
-            gap: 20px;
-        }
-         .heroRightButtons {
-            padding-left: unset;
-            gap: 12px;
-        }
-                    .muHeroLogos {
-                margin: 0;
-            }
-                        .btnWhite {
-                width: 100%;
-            }
-                        .heroLeft {
-                padding: 16px;
-            }
-            .muvectorhero {
-        font-weight: 300 !important;
-    }
-    .muHeroLogos{
-        justify-content: center;
-    }
-            
-
-
-
-        }
-
-        .intersectHero{
-                        padding-top: 47px !important; 
-
-                                .techHeroSectionWrapper {
-            width: 100%;
-        }
-            .techHeroSectionWrapper {
-        position: relative;
-    }
-
-    .masterImage {
-    width: 100%;
-    position: relative;
-    line-height: 0;
-    border-radius: 8px;
-    overflow: hidden;
-}
-        .studentWrapperHeadingDiv {
-            position: relative;
-            bottom: 82px;
-            left: 0;
-            padding-inline: 15px;
-            width: 100%;
-                    z-index: 5;
-                    display: flex;
-        flex-direction: column;
-        gap: 16px;
-        }
-
-                .heroHeading {
-                    display: flex;
-        flex-direction: column;
-            gap: 16px;
-            padding-inline: 5px;
-        }
-                .studentPara {
-            font-size: 22px;
-        }
-                .studentPBold {
-            font-size: 24px;
-        }
-                .techHeroSection .intersectHeroBtn {
-            width: 100%;
-            align-items: flex-start;
-            gap: 12px;
-            flex-direction: column;
-        }
-                 .intersectHeroBtn {
-            width: 100%;
-            align-items: flex-start;
-            gap: 12px;
-            flex-direction: column;
-        }
-        .whiteFillButton{
-            display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 14px 24px;
-        font-size: 16px;
-        font-family: var(--go-medium);
-        line-height: 24px;
-        color: var(--black);
-        cursor: pointer;
-        background: var(--white);
-        border-radius: 54px;
-        width: 100%;
-        max-width: 100%;
-        
-                justify-content: center;
-        }
-        .btnWhite.outline {
-    background: transparent;
-    border: 1px solid white;
-    color: white;
-    width: 100%;
-                padding: 14px 24px;
-                    cursor: pointer;
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-    justify-content: center;
-        font: 16px 'go-medium';
-    line-height: 150% !important;
-        border-radius: 54px;
-}
-          
-
-        }
-
-
-      }
-</style>
-`
-
 // Component Categories
 const componentCategories: ComponentCategory[] = [
   {
@@ -707,18 +171,20 @@ export default function ComponentsPanel({
   }
 
   const handleComponentSelect = (componentHtml: string) => {
-    // Check if styles are already in the HTML
-    const hasHeroStyles = html.includes('homeHeroSection') || html.includes('heroSection') || html.includes('intersectHero')
+    // Check if component styles are already in the HTML (only from component-styles.ts)
+    const hasComponentStyles = html.includes('--yellow: #fad133') || html.includes('componentStyles')
     
     if (!html || html.trim() === "") {
-      // If no HTML exists, create a basic structure with styles
+      // If no HTML exists, create a basic structure with component styles from component-styles.ts only
+      // All CSS (including hero styles) is in component-styles.ts
+      const stylesTag = `<style>${componentStyles}</style>`
       const newHtml = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Generated Page</title>
-  ${hasHeroStyles ? '' : heroSectionStyles}
+  ${stylesTag}
 </head>
 <body>
 ${componentHtml}
@@ -735,9 +201,9 @@ ${componentHtml}
     // Get head content
     let headContent = doc.head ? doc.head.innerHTML : ""
     
-    // Add hero styles if not already present
-    if (!hasHeroStyles && (componentHtml.includes('homeHeroSection') || componentHtml.includes('heroSection') || componentHtml.includes('intersectHero'))) {
-      headContent = headContent + heroSectionStyles
+    // Add component styles from component-styles.ts only (all CSS is in this file)
+    if (!hasComponentStyles) {
+      headContent = headContent + `<style>${componentStyles}</style>`
     }
     
     // Get body content
@@ -752,6 +218,7 @@ ${componentHtml}
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generated Page</title>
   ${headContent}
 </head>
 <body>
@@ -764,7 +231,7 @@ ${newBodyContent}
   }
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-theme={selectedTheme}>
       <div className={styles.header}>
         <p className={styles.eyebrow}>Components</p>
         <p className={styles.subtitle}>Select a component to add</p>
