@@ -42,6 +42,7 @@ const VIDEO_TARGET_ATTRIBUTE = "data-mu-video-target"
 const VIDEO_YOUTUBE_ATTRIBUTE = "data-video-youtube"
 const VIDEO_CDN_ATTRIBUTE = "data-video-cdn"
 const IMAGE_TARGET_ATTRIBUTE = "data-mu-image-target"
+const BACKGROUND_IMAGE_TARGET_ATTRIBUTE = "data-mu-bg-image-target"
 type LinkableTag = "a" | "button"
 
 const sanitizeLinkUrl = (rawValue: string) => {
@@ -337,6 +338,29 @@ const injectBaseStyles = (doc: Document) => {
         outline: 2px solid rgba(86, 149, 255, 0.95) !important;
         box-shadow: 0 0 0 3px rgba(86, 149, 255, 0.3) !important;
         cursor: pointer !important;
+      }
+      body[data-mu-edit-mode="true"] [${BACKGROUND_IMAGE_TARGET_ATTRIBUTE}="true"] {
+        outline: 2px solid rgba(250, 209, 51, 0.95) !important;
+        box-shadow: 0 0 0 3px rgba(250, 209, 51, 0.3) !important;
+        cursor: pointer !important;
+        position: relative;
+      }
+      body[data-mu-edit-mode="true"] [${BACKGROUND_IMAGE_TARGET_ATTRIBUTE}="true"]:hover::after {
+        content: "Click to change background image";
+        position: absolute;
+        top: -22px;
+        right: -4px;
+        font-size: 10px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(250, 209, 51, 0.96);
+        color: #050505;
+        font-family: "Inter", "Segoe UI", sans-serif;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        pointer-events: none;
+        z-index: 10000;
       }
       body[data-mu-edit-mode="true"] [${IMAGE_TARGET_ATTRIBUTE}="true"]:hover::after {
         content: "Click to change image";
@@ -803,6 +827,12 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   const highlightedImageRef = useRef<HTMLImageElement | null>(null)
   const imageMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const imageFileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const [bgImageEditorTarget, setBgImageEditorTarget] = useState<HTMLElement | null>(null)
+  const [bgImageEditorMessage, setBgImageEditorMessage] = useState("")
+  const [bgImageEditorTone, setBgImageEditorTone] = useState<"info" | "success" | "error">("info")
+  const highlightedBgImageRef = useRef<HTMLElement | null>(null)
+  const bgImageMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const toolbarCallbacksRef = useRef<{
     onLinkValueChange?: (value: string) => void
     onApplyLink?: () => void
@@ -839,6 +869,13 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
   }, [])
 
+  const clearHighlightedBgImage = useCallback(() => {
+    if (highlightedBgImageRef.current) {
+      highlightedBgImageRef.current.removeAttribute(BACKGROUND_IMAGE_TARGET_ATTRIBUTE)
+      highlightedBgImageRef.current = null
+    }
+  }, [])
+
   const resetLinkMessageTimer = useCallback(() => {
     if (linkMessageTimeoutRef.current) {
       clearTimeout(linkMessageTimeoutRef.current)
@@ -857,6 +894,13 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     if (imageMessageTimeoutRef.current) {
       clearTimeout(imageMessageTimeoutRef.current)
       imageMessageTimeoutRef.current = null
+    }
+  }, [])
+
+  const resetBgImageMessageTimer = useCallback(() => {
+    if (bgImageMessageTimeoutRef.current) {
+      clearTimeout(bgImageMessageTimeoutRef.current)
+      bgImageMessageTimeoutRef.current = null
     }
   }, [])
 
@@ -1050,6 +1094,46 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     [clearHighlightedImage, resetImageMessageTimer]
   )
 
+  const updateBgImageEditorSelection = useCallback(
+    (element: HTMLElement | null) => {
+      resetBgImageMessageTimer()
+      setBgImageEditorMessage("")
+      setBgImageEditorTone("info")
+
+      if (!element) {
+        clearHighlightedBgImage()
+        setBgImageEditorTarget(null)
+        return
+      }
+
+      const doc = getIframeDocument(iframeRef.current)
+      if (!doc || !doc.body || !doc.body.contains(element)) {
+        clearHighlightedBgImage()
+        setBgImageEditorTarget(null)
+        return
+      }
+
+      // Clear previous selection
+      clearHighlightedBgImage()
+      
+      // Set new selection
+      element.setAttribute(BACKGROUND_IMAGE_TARGET_ATTRIBUTE, "true")
+      highlightedBgImageRef.current = element
+      setBgImageEditorTarget(element)
+      
+      // Ensure the element is still in the DOM after update
+      const checkElement = () => {
+        if (doc.body.contains(element)) {
+          element.setAttribute(BACKGROUND_IMAGE_TARGET_ATTRIBUTE, "true")
+        }
+      }
+      
+      // Re-apply attribute after a brief delay to ensure it persists
+      setTimeout(checkElement, 10)
+    },
+    [clearHighlightedBgImage, resetBgImageMessageTimer]
+  )
+
   const getResolvedImageTarget = useCallback(() => {
     if (!imageEditorTarget) {
       return null
@@ -1063,6 +1147,20 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
 
     return imageEditorTarget
   }, [imageEditorTarget, updateImageEditorSelection])
+
+  const getResolvedBgImageTarget = useCallback(() => {
+    if (!bgImageEditorTarget) {
+      return null
+    }
+
+    const doc = getIframeDocument(iframeRef.current)
+    if (!doc || !doc.body || !doc.body.contains(bgImageEditorTarget)) {
+      updateBgImageEditorSelection(null)
+      return null
+    }
+
+    return bgImageEditorTarget
+  }, [bgImageEditorTarget, updateBgImageEditorSelection])
 
   const readIframeHtml = useCallback(() => {
     const doc = getIframeDocument(iframeRef.current)
@@ -1079,6 +1177,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     htmlClone.querySelectorAll(`[${LINK_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(LINK_TARGET_ATTRIBUTE))
     htmlClone.querySelectorAll(`[${VIDEO_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(VIDEO_TARGET_ATTRIBUTE))
     htmlClone.querySelectorAll(`[${IMAGE_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(IMAGE_TARGET_ATTRIBUTE))
+    htmlClone.querySelectorAll(`[${BACKGROUND_IMAGE_TARGET_ATTRIBUTE}]`).forEach((node) => node.removeAttribute(BACKGROUND_IMAGE_TARGET_ATTRIBUTE))
     // Remove popup from cloned HTML
     htmlClone.querySelectorAll("#heroPopup").forEach((node) => node.remove())
     bodyClone?.removeAttribute("contenteditable")
@@ -1145,8 +1244,10 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       clearHighlightedVideo()
       resetImageMessageTimer()
       clearHighlightedImage()
+      resetBgImageMessageTimer()
+      clearHighlightedBgImage()
     }
-  }, [resetLinkMessageTimer, clearHighlightedLink, resetVideoMessageTimer, clearHighlightedVideo, resetImageMessageTimer, clearHighlightedImage])
+  }, [resetLinkMessageTimer, clearHighlightedLink, resetVideoMessageTimer, clearHighlightedVideo, resetImageMessageTimer, clearHighlightedImage, resetBgImageMessageTimer, clearHighlightedBgImage])
 
   useEffect(() => {
     if (skipNextHtmlSync.current) {
@@ -1189,6 +1290,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       updateLinkEditorSelection(null)
       updateVideoEditorSelection(null)
       updateImageEditorSelection(null)
+      updateBgImageEditorSelection(null)
       const doc = getIframeDocument(iframeRef.current)
       if (doc) {
         removeToolbar(doc)
@@ -1512,6 +1614,49 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       return null
     }
 
+    const resolveBackgroundImageElement = (target: EventTarget | null): HTMLElement | null => {
+      if (!target) {
+        return null
+      }
+
+      const elementCandidate = target as HTMLElement | null
+      if (!elementCandidate) {
+        return null
+      }
+
+      // Skip if the clicked element is a button or link - these should be handled by link editor
+      if (elementCandidate.tagName === "BUTTON" || elementCandidate.tagName === "A" || 
+          elementCandidate.closest("button") || elementCandidate.closest("a")) {
+        return null
+      }
+
+      // Check if the clicked element or any parent has a background image
+      let current: HTMLElement | null = elementCandidate
+      while (current && current !== doc.body) {
+        // Skip buttons and links in the parent chain
+        if (current.tagName === "BUTTON" || current.tagName === "A") {
+          current = current.parentElement
+          continue
+        }
+
+        const style = window.getComputedStyle(current)
+        const bgImage = style.backgroundImage
+        
+        // Check if element has a background image (not 'none')
+        if (bgImage && bgImage !== 'none' && bgImage !== 'initial' && bgImage !== 'inherit') {
+          // Extract URL from background-image (handles url(...) format)
+          const urlMatch = bgImage.match(/url\(['"]?([^'"]+)['"]?\)/)
+          if (urlMatch && urlMatch[1]) {
+            return current
+          }
+        }
+        
+        current = current.parentElement
+      }
+
+      return null
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       // Ignore ALL keydown events from toolbar
       const target = event.target as HTMLElement
@@ -1555,6 +1700,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
         event.stopPropagation()
         // Always allow re-selection, even if clicking the same image
         updateImageEditorSelection(imageElement)
+        updateBgImageEditorSelection(null)
         updateVideoEditorSelection(null)
         updateLinkEditorSelection(null)
         // Prevent any default behavior that might cause scrolling
@@ -1569,21 +1715,42 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
         updateVideoEditorSelection(videoElement)
         updateLinkEditorSelection(null)
         updateImageEditorSelection(null)
+        updateBgImageEditorSelection(null)
         return
       }
 
-      // Then check for link element
+      // Check for link element (buttons and links) - BEFORE background images
+      // This ensures buttons are detected as linkable elements first
       const linkElement = resolveLinkableElement(event.target)
       if (linkElement) {
+        // In edit mode, always prevent default for buttons and links
+        // This prevents navigation/redirect and allows editing
         event.preventDefault()
+        event.stopPropagation()
         updateLinkEditorSelection(linkElement)
         updateVideoEditorSelection(null)
         updateImageEditorSelection(null)
-      } else {
-        updateLinkEditorSelection(null)
-        updateVideoEditorSelection(null)
-        updateImageEditorSelection(null)
+        updateBgImageEditorSelection(null)
+        return
       }
+
+      // Check for background image element LAST (only if no button/link was found)
+      const bgImageElement = resolveBackgroundImageElement(event.target)
+      if (bgImageElement) {
+        event.preventDefault()
+        event.stopPropagation()
+        updateBgImageEditorSelection(bgImageElement)
+        updateImageEditorSelection(null)
+        updateVideoEditorSelection(null)
+        updateLinkEditorSelection(null)
+        return false
+      }
+
+      // Clear all selections if nothing was clicked
+      updateLinkEditorSelection(null)
+      updateVideoEditorSelection(null)
+      updateImageEditorSelection(null)
+      updateBgImageEditorSelection(null)
     }
 
     const handleFocusIn = (event: FocusEvent) => {
@@ -1704,10 +1871,27 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     // Prevent default link behavior in edit mode
     const handleLinkClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement
+      const toolbar = doc.getElementById(TOOLBAR_ID)
+      
+      // Don't interfere with toolbar buttons - let them work normally
+      if (toolbar && (toolbar.contains(target) || toolbar === target)) {
+        return
+      }
+      
       if (target && (target.tagName === "A" || target.closest("a"))) {
         const imageElement = resolveImageElement(event.target)
         const videoElement = resolveVideoElement(event.target)
-        // Only prevent default if it's not an image or video we're editing
+        // Always prevent default for links in edit mode (except for images/videos being edited)
+        if (!imageElement && !videoElement) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+      }
+      // Also prevent default for buttons in edit mode (but not toolbar buttons)
+      if (target && (target.tagName === "BUTTON" || target.closest("button"))) {
+        const imageElement = resolveImageElement(event.target)
+        const videoElement = resolveVideoElement(event.target)
+        // Always prevent default for buttons in edit mode (except for images/videos being edited)
         if (!imageElement && !videoElement) {
           event.preventDefault()
           event.stopPropagation()
@@ -1737,6 +1921,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
       doc.querySelectorAll("[data-mu-tooltip-added]").forEach((el) => el.removeAttribute("data-mu-tooltip-added"))
 
       updateImageEditorSelection(null)
+      updateBgImageEditorSelection(null)
 
       doc.body.removeAttribute("contenteditable")
       doc.body.removeAttribute("data-mu-edit-mode")
@@ -1752,7 +1937,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
         setupPlayButtonHandlers(doc)
       }, 100)
     }
-  }, [isEditMode, updateLinkEditorSelection, updateVideoEditorSelection, updateImageEditorSelection])
+  }, [isEditMode, updateLinkEditorSelection, updateVideoEditorSelection, updateImageEditorSelection, updateBgImageEditorSelection])
 
   useEffect(() => {
     onEditModeChange?.(isEditMode)
@@ -2192,7 +2377,88 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     }
   }
 
-  const injectToolbar = useCallback((target: HTMLElement | null, type: "link" | "video" | "image" | null) => {
+  const showBgImageMessage = useCallback(
+    (message: string, tone: "info" | "success" | "error" = "info") => {
+      resetBgImageMessageTimer()
+      setBgImageEditorMessage(message)
+      setBgImageEditorTone(tone)
+
+      if (message) {
+        bgImageMessageTimeoutRef.current = setTimeout(() => {
+          setBgImageEditorMessage("")
+        }, 3000)
+      }
+    },
+    [resetBgImageMessageTimer]
+  )
+
+  const handleBgImageUrlChange = (url: string) => {
+    const target = getResolvedBgImageTarget()
+    if (!target) {
+      showBgImageMessage("Select a background image first", "error")
+      return
+    }
+
+    if (!url.trim()) {
+      showBgImageMessage("Enter a valid image URL", "error")
+      return
+    }
+
+    // Basic URL validation
+    try {
+      new URL(url)
+    } catch {
+      // Not a full URL, might be a relative path or data URL
+      if (!url.startsWith("/") && !url.startsWith("data:image/")) {
+        showBgImageMessage("Enter a valid image URL or path", "error")
+        return
+      }
+    }
+
+    // Save scroll position before updating
+    const iframeWindow = getIframeWindow(iframeRef.current)
+    let scrollX = 0
+    let scrollY = 0
+    if (iframeWindow) {
+      scrollX = iframeWindow.scrollX || iframeWindow.pageXOffset || 0
+      scrollY = iframeWindow.scrollY || iframeWindow.pageYOffset || 0
+    }
+
+    const wasSelected = target === bgImageEditorTarget
+    
+    // Update background image
+    target.style.backgroundImage = `url('${url.replace(/'/g, "\\'")}')`
+    
+    // Re-apply selection attribute after change
+    if (wasSelected) {
+      setTimeout(() => {
+        const doc = getIframeDocument(iframeRef.current)
+        if (doc && doc.body.contains(target)) {
+          target.setAttribute(BACKGROUND_IMAGE_TARGET_ATTRIBUTE, "true")
+          highlightedBgImageRef.current = target
+          setBgImageEditorTarget(target)
+        }
+      }, 10)
+    }
+    
+    // Only persist HTML without reloading iframe
+    const updated = readIframeHtml()
+    if (updated && onHtmlChange) {
+      skipNextHtmlSync.current = true
+      onHtmlChange(updated)
+    }
+    
+    showBgImageMessage("Background image updated", "success")
+    
+    // Restore scroll position
+    if (iframeWindow) {
+      setTimeout(() => {
+        iframeWindow.scrollTo(scrollX, scrollY)
+      }, 0)
+    }
+  }
+
+  const injectToolbar = useCallback((target: HTMLElement | null, type: "link" | "video" | "image" | "bgImage" | null) => {
     const doc = getIframeDocument(iframeRef.current)
     if (!doc || !doc.body) return
 
@@ -2772,6 +3038,120 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
         message.style.cssText = `font-size: 11px; color: ${imageEditorTone === "success" ? "orange" : imageEditorTone === "error" ? "#ff7b7b" : "rgba(255, 255, 255, 0.7)"};`
         toolbar.appendChild(message)
       }
+    } else if (type === "bgImage" && bgImageEditorTarget) {
+      // Get current background image URL
+      const style = window.getComputedStyle(bgImageEditorTarget)
+      const bgImage = style.backgroundImage
+      let currentUrl = ""
+      if (bgImage && bgImage !== 'none') {
+        const urlMatch = bgImage.match(/url\(['"]?([^'"]+)['"]?\)/)
+        if (urlMatch && urlMatch[1]) {
+          currentUrl = urlMatch[1]
+        }
+      }
+
+      const urlInput = doc.createElement("input")
+      urlInput.type = "text"
+      urlInput.placeholder = "Background Image URL"
+      urlInput.value = currentUrl
+      urlInput.style.cssText = `
+        flex: 1;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        font-size: 12px;
+        font-family: inherit;
+      `
+      urlInput.setAttribute("contenteditable", "false")
+      urlInput.setAttribute("spellcheck", "false")
+      urlInput.addEventListener("blur", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        handleBgImageUrlChange((e.target as HTMLInputElement).value)
+      }, { capture: true })
+      urlInput.addEventListener("keydown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        if (e.key === "Enter") {
+          e.preventDefault()
+          handleBgImageUrlChange((e.target as HTMLInputElement).value)
+        }
+      }, { capture: true })
+      urlInput.addEventListener("keyup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("keypress", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("focus", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("input", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("mousedown", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("mouseup", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("click", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("focusin", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+      urlInput.addEventListener("focusout", (e) => {
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+      }, { capture: true })
+
+      const controls = doc.createElement("div")
+      controls.style.cssText = "display: flex; gap: 10px; align-items: center;"
+      
+      const saveBtn = doc.createElement("button")
+      saveBtn.textContent = "Save"
+      saveBtn.style.cssText = `
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        background: orange;
+        color: #000;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      `
+      saveBtn.setAttribute("contenteditable", "false")
+      saveBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        handleBgImageUrlChange(urlInput.value)
+      })
+      saveBtn.addEventListener("mousedown", (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+
+      controls.appendChild(urlInput)
+      controls.appendChild(saveBtn)
+      toolbar.appendChild(controls)
+
+      if (bgImageEditorMessage) {
+        const message = doc.createElement("span")
+        message.textContent = bgImageEditorMessage
+        message.style.cssText = `font-size: 11px; color: ${bgImageEditorTone === "success" ? "orange" : bgImageEditorTone === "error" ? "#ff7b7b" : "rgba(255, 255, 255, 0.7)"};`
+        toolbar.appendChild(message)
+      }
     }
 
     // Stop propagation on toolbar to prevent clearing selection
@@ -2814,7 +3194,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
     doc.body.appendChild(toolbar)
     positionToolbar(target, toolbar, doc)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkEditorTarget, linkEditorMessage, linkEditorTone, videoEditorTarget, videoEditorMessage, videoEditorTone, imageEditorTarget, imageEditorMessage, imageEditorTone])
+  }, [linkEditorTarget, linkEditorMessage, linkEditorTone, videoEditorTarget, videoEditorMessage, videoEditorTone, imageEditorTarget, imageEditorMessage, imageEditorTone, bgImageEditorTarget, bgImageEditorMessage, bgImageEditorTone])
 
   useEffect(() => {
     if (!isEditMode) return
@@ -2829,6 +3209,8 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
         injectToolbar(videoEditorTarget, "video")
       } else if (imageEditorTarget) {
         injectToolbar(imageEditorTarget, "image")
+      } else if (bgImageEditorTarget) {
+        injectToolbar(bgImageEditorTarget, "bgImage")
       } else {
         removeToolbar(doc)
       }
@@ -2846,6 +3228,8 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
           positionToolbar(videoEditorTarget, toolbar, doc)
         } else if (imageEditorTarget) {
           positionToolbar(imageEditorTarget, toolbar, doc)
+        } else if (bgImageEditorTarget) {
+          positionToolbar(bgImageEditorTarget, toolbar, doc)
         }
       }
     }
