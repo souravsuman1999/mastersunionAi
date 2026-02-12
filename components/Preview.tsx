@@ -3400,7 +3400,7 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
             ref={iframeRef}
             className={styles.iframe}
             srcDoc={displayHtml}
-            sandbox="allow-scripts allow-same-origin"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
             title="Generated Webpage Preview"
           />
         ) : (

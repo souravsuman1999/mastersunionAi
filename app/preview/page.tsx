@@ -172,7 +172,7 @@ function FullPreviewContent() {
           <iframe
             className={styles.fullFrame}
             srcDoc={html}
-            sandbox="allow-scripts allow-same-origin"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
             title="Full Page Preview"
           />
         ) : (
