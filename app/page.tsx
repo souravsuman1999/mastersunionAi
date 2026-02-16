@@ -286,7 +286,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
-import AdvancedModeToggle from "@/components/AdvancedModeToggle"
 import OutputSectionsPanel from "@/components/OutputSectionsPanel"
 import PricingModal from "@/components/PricingModal"
 import styles from "./page.module.css"
@@ -670,15 +669,7 @@ useEffect(() => {
             />
           )}
 
-            {/* Advanced Mode Toggle - shown only after version clicked or generated */}
-            {(selectedVersionId || hasGenerated) && (
-              <AdvancedModeToggle
-                isAdvancedMode={isAdvancedMode}
-                onToggle={handleAdvancedModeToggle}
-                disabled={isLoading || isPreviewEditMode || isTransitioning}
-                selectedTheme={selectedTheme}
-              />
-            )}
+            {/* Advanced Mode Toggle - hidden */}
 
             {/* Sidebar Prompt Input - only shown when Advanced Mode is OFF */}
             {(selectedVersionId || hasGenerated) && (!isAdvancedMode || isTransitioning) && (
