@@ -12,8 +12,8 @@ interface PromptInputProps {
   error?: string
   isReadOnly?: boolean
   variant?: "hero" | "sidebar"
-  selectedTheme?: "mastersunion" | "tetr"
-  onThemeChange?: (theme: "mastersunion" | "tetr") => void
+  selectedTheme?: "mastersunion" | "tetr" | "free"
+  onThemeChange?: (theme: "mastersunion" | "tetr" | "free") => void
 }
 
 export default function PromptInput({
@@ -24,7 +24,7 @@ export default function PromptInput({
   error,
   isReadOnly,
   variant = "hero",
-  selectedTheme = "mastersunion",
+  selectedTheme = "free",
   onThemeChange,
 }: PromptInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -148,6 +148,14 @@ export default function PromptInput({
         <div className={styles.themeSelector}>
           <label className={styles.themeLabel}>Theme:</label>
           <div className={styles.themeButtons}>
+            <button
+              type="button"
+              onClick={() => onThemeChange("free")}
+              className={`${styles.themeButton} ${selectedTheme === "free" ? styles.themeButtonActive : ""}`}
+              disabled={isLoading || isReadOnly}
+            >
+              Free
+            </button>
             <button
               type="button"
               onClick={() => onThemeChange("mastersunion")}

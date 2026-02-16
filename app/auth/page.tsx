@@ -532,7 +532,7 @@ function persistAndRedirect(data: any) {
     </label>
   )
 
-  const showGoogleButton = mode !== "forgot"
+  const showGoogleButton = false // Google login/signup hidden
 
   return (
     <div className={styles.authContainer}>

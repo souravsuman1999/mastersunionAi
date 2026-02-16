@@ -6,14 +6,14 @@ interface AdvancedModeToggleProps {
   isAdvancedMode: boolean
   onToggle: (enabled: boolean) => void
   disabled?: boolean
-  selectedTheme?: "mastersunion" | "tetr"
+  selectedTheme?: "mastersunion" | "tetr" | "free"
 }
 
 export default function AdvancedModeToggle({
   isAdvancedMode,
   onToggle,
   disabled = false,
-  selectedTheme = "mastersunion"
+  selectedTheme = "free"
 }: AdvancedModeToggleProps) {
   return (
     <div className={styles.container}>

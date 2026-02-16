@@ -286,7 +286,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
-import AdvancedModeToggle from "@/components/AdvancedModeToggle"
 import OutputSectionsPanel from "@/components/OutputSectionsPanel"
 import PricingModal from "@/components/PricingModal"
 import styles from "./page.module.css"
@@ -298,7 +297,7 @@ type PromptVersion = {
   html: string
   createdAt: string
   versionNumber: number
-  theme?: "mastersunion" | "tetr"
+  theme?: "mastersunion" | "tetr" | "free"
 }
 
 const timestampFormatter = new Intl.DateTimeFormat("en-US", {
@@ -324,7 +323,7 @@ export default function Home() {
   const [versionCounter, setVersionCounter] = useState(0)
   const [isPreviewEditMode, setIsPreviewEditMode] = useState(false)
   const [hasRestoredState, setHasRestoredState] = useState(false)
-  const [selectedTheme, setSelectedTheme] = useState<"mastersunion" | "tetr">("mastersunion")
+  const [selectedTheme, setSelectedTheme] = useState<"mastersunion" | "tetr" | "free">("free")
   const [isAdvancedMode, setIsAdvancedMode] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showPricingModal, setShowPricingModal] = useState(false)
@@ -670,15 +669,7 @@ useEffect(() => {
             />
           )}
 
-            {/* Advanced Mode Toggle - shown only after version clicked or generated */}
-            {(selectedVersionId || hasGenerated) && (
-              <AdvancedModeToggle
-                isAdvancedMode={isAdvancedMode}
-                onToggle={handleAdvancedModeToggle}
-                disabled={isLoading || isPreviewEditMode || isTransitioning}
-                selectedTheme={selectedTheme}
-              />
-            )}
+            {/* Advanced Mode Toggle - hidden */}
 
             {/* Sidebar Prompt Input - only shown when Advanced Mode is OFF */}
             {(selectedVersionId || hasGenerated) && (!isAdvancedMode || isTransitioning) && (
