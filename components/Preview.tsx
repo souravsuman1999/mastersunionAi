@@ -81,9 +81,14 @@ interface PreviewProps {
   isLoading?: boolean
   activeVersionLabel?: string
   onHtmlChange?: (updatedHtml: string) => void
-  onEditModeChange?: (isEditMode: boolean) => void
+  onEditModeChange?: (isEditMode: boolean, latestHtml?: string) => void
   selectedTheme?: "mastersunion" | "tetr"
   onNewChat?: () => void
+  selectedVersionId?: string | null
+  canUndo?: boolean
+  canRedo?: boolean
+  onUndo?: () => void
+  onRedo?: () => void
 }
 
 const getIframeDocument = (iframe: HTMLIFrameElement | null) => {
@@ -798,7 +803,20 @@ const positionToolbar = (element: HTMLElement, toolbar: HTMLElement, doc: Docume
   }
 }
 
-export default function Preview({ html, isLoading, activeVersionLabel, onHtmlChange, onEditModeChange, selectedTheme = "mastersunion", onNewChat }: PreviewProps) {
+export default function Preview({
+  html,
+  isLoading,
+  activeVersionLabel,
+  onHtmlChange,
+  onEditModeChange,
+  selectedTheme = "mastersunion",
+  onNewChat,
+  selectedVersionId,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
+}: PreviewProps) {
   const [displayHtml, setDisplayHtml] = useState(html)
   const [isEditMode, setIsEditMode] = useState(false)
   const [iframeReady, setIframeReady] = useState(false)
@@ -1942,10 +1960,12 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
   useEffect(() => {
     onEditModeChange?.(isEditMode)
   }, [isEditMode, onEditModeChange])
+  // When turning edit OFF we pass latestHtml from handleToggleEditMode so parent saves the correct content
 
   useEffect(() => {
     if (isLoading && isEditMode) {
-      persistEditedHtml()
+      const updated = persistEditedHtml()
+      onEditModeChange?.(false, updated ?? undefined)
       setIsEditMode(false)
     }
     // When loading completes, ensure iframeReady is set correctly
@@ -3256,7 +3276,8 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
 
     if (isEditMode) {
       updateLinkEditorSelection(null)
-      persistEditedHtml()
+      const updated = persistEditedHtml()
+      onEditModeChange?.(false, updated ?? undefined)
       setIsEditMode(false)
       return
     }
@@ -3360,6 +3381,36 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
             View full page
           </button>
           <div className={styles.editModeGroup}>
+            {selectedVersionId && (
+              <>
+                <button
+                  className={styles.undoRedoButton}
+                  onClick={onUndo}
+                  disabled={!canUndo || isLoading}
+                  type="button"
+                  title="Undo"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 10h10a5 5 0 0 1 5 5v2" />
+                    <path d="M7 14 3 10l4-4" />
+                  </svg>
+                  Undo
+                </button>
+                <button
+                  className={styles.undoRedoButton}
+                  onClick={onRedo}
+                  disabled={!canRedo || isLoading}
+                  type="button"
+                  title="Redo"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10H11a5 5 0 0 0-5 5v2" />
+                    <path d="M17 14l4 4 4-4" />
+                  </svg>
+                  Redo
+                </button>
+              </>
+            )}
             <button
               className={`${styles.editButton} ${isEditMode ? styles.editButtonActive : ""}`}
               onClick={handleToggleEditMode}
@@ -3375,9 +3426,6 @@ export default function Preview({ html, isLoading, activeVersionLabel, onHtmlCha
                 {isEditMode ? "ON" : "OFF"}
               </span>
             </button>
-            {/* <span className={`${styles.editStatus} ${isEditMode ? styles.editStatusActive : ""}`}>
-              {isEditMode ? "Editing in preview" : "Preview locked"}
-            </span> */}
           </div>
           <ProfileMenu onNewChat={onNewChat} />
         </div>

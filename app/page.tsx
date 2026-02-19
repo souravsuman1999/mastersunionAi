@@ -282,22 +282,66 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import PromptInput from "@/components/PromptInput"
 import Preview from "@/components/Preview"
 import OutputSectionsPanel from "@/components/OutputSectionsPanel"
 import PricingModal from "@/components/PricingModal"
+import { versionApiUrl } from "@/lib/versionApi"
 import styles from "./page.module.css"
 
-
 type PromptVersion = {
-  _id: string
+  _id?: string
+  id?: string
   prompt: string
   html: string
   createdAt: string
   versionNumber: number
   theme?: "mastersunion" | "tetr" | "free"
+  htmlHistory?: string[]
+  currentIndex?: number
+}
+
+function getVersionId(v: PromptVersion): string {
+  return v._id ?? v.id ?? ""
+}
+
+// Undo only when currentIndex > 0; redo only when currentIndex < htmlHistory.length - 1
+function canUndoFromHistory(_length: number, index: number): boolean {
+  return index > 0
+}
+function canRedoFromHistory(length: number, index: number): boolean {
+  return index < length - 1
+}
+
+function normalizeVersionFromApi(raw: unknown): PromptVersion {
+  const r = raw as Record<string, unknown>
+  const idObj = r._id as string | { $oid?: string; oid?: string } | undefined
+  const idStr =
+    typeof idObj === "string"
+      ? idObj
+      : idObj && typeof idObj === "object"
+        ? (idObj.$oid ?? idObj.oid ?? "")
+        : (r.id as string) ?? ""
+  const dateObj = r.createdAt as string | { $date?: string } | undefined
+  const createdAtStr =
+    typeof dateObj === "string" ? dateObj : dateObj?.$date ?? new Date().toISOString()
+  const hist = Array.isArray(r.htmlHistory) ? (r.htmlHistory as string[]) : []
+  const idx = Math.min(Math.max(0, Number(r.currentIndex) ?? 0), Math.max(0, hist.length - 1))
+  const htmlFromHistory = hist[idx] ?? hist[0] ?? ""
+  const html = (r.html as string)?.trim() ? (r.html as string) : htmlFromHistory
+  const hasNewSchema = hist.length > 0
+  return {
+    _id: idStr,
+    prompt: (r.prompt as string) ?? "",
+    html,
+    createdAt: createdAtStr,
+    versionNumber: Number(r.versionNumber) ?? 0,
+    theme: r.theme as PromptVersion["theme"],
+    htmlHistory: hasNewSchema ? hist : [html],
+    currentIndex: hasNewSchema ? idx : 0,
+  }
 }
 
 const timestampFormatter = new Intl.DateTimeFormat("en-US", {
@@ -327,6 +371,11 @@ export default function Home() {
   const [isAdvancedMode, setIsAdvancedMode] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showPricingModal, setShowPricingModal] = useState(false)
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+  const editSessionHtmlRef = useRef<string | null>(null)
+  const hasSavedThisEditSessionRef = useRef(false)
+  const [localVersionHistory, setLocalVersionHistory] = useState<Record<string, { history: string[]; index: number }>>({})
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("mu_auth") === "true";
@@ -380,25 +429,27 @@ export default function Home() {
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch(`https://api.mastersunion.org/api/getVersions/${email}`);
+      const res = await fetch(versionApiUrl(`/api/getVersions/${encodeURIComponent(email)}`));
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
-        setVersions(data.data);
-
+        const list = (data.data as unknown[]).map(normalizeVersionFromApi);
+        setVersions(list);
         const storedVersionId = localStorage.getItem("ws_selectedVersionId");
-        if (!selectedVersionId && data.data.length > 0) {
-          setVersionCounter(data.data[0].versionNumber);
+        if (list.length > 0) {
+          setVersionCounter(list[0].versionNumber ?? 0);
+          setSelectedVersionId(getVersionId(list[0]) || null);
         }
-        
-        // Restore HTML from selected version if available (more reliable than localStorage for large HTML)
-        if (storedVersionId && data.data.length > 0) {
-          const versionToRestore = data.data.find((v: PromptVersion) => v._id === storedVersionId);
+        if (storedVersionId && list.length > 0) {
+          const versionToRestore = list.find((v) => getVersionId(v) === storedVersionId);
           if (versionToRestore) {
             setGeneratedHtml(versionToRestore.html);
             setHasGenerated(true);
-            if (versionToRestore.theme) {
-              setSelectedTheme(versionToRestore.theme);
-            }
+            if (versionToRestore.theme) setSelectedTheme(versionToRestore.theme);
+            const hist = versionToRestore.htmlHistory ?? [];
+            const idx = versionToRestore.currentIndex ?? 0;
+            setCanUndo(canUndoFromHistory(hist.length, idx));
+            setCanRedo(canRedoFromHistory(hist.length, idx));
+            setSelectedVersionId(getVersionId(versionToRestore) || null);
           }
         }
       }
@@ -454,7 +505,115 @@ useEffect(() => {
   hasGenerated
 ]);
 
+  const persistEditedHtml = useCallback(async (versionId: string, html: string) => {
+    try {
+      const res = await fetch(versionApiUrl("/api/saveEditedHtml"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ versionId, html }),
+      })
+      const contentType = res.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        return
+      }
+      const data = await res.json()
+      if (data.success && data.data) {
+        const d = data.data
+        const hist = Array.isArray(d.htmlHistory) ? d.htmlHistory : []
+        const idx = Math.min(Number(d.currentIndex) ?? 0, Math.max(0, hist.length - 1))
+        const currentHtml = d.html ?? hist[idx] ?? hist[0] ?? ""
+        setCanUndo(canUndoFromHistory(hist.length, idx))
+        setCanRedo(canRedoFromHistory(hist.length, idx))
+        setVersions((prev) =>
+          prev.map((v) =>
+            getVersionId(v) === versionId ? { ...v, html: currentHtml, htmlHistory: hist, currentIndex: idx } : v
+          )
+        )
+      }
+    } catch {
+      // Network error, CORS, or server down - keep local state; no need to surface to user
+    }
+  }, [])
 
+  const handleUndo = useCallback(async () => {
+    const versionId = selectedVersionId ?? (versions.length > 0 ? getVersionId(versions[0]) : null)
+    if (!versionId) return
+    const isTemp = versionId.startsWith("temp-")
+    if (isTemp) {
+      const cur = localVersionHistory[versionId]
+      if (!cur || cur.index <= 0) return
+      const newIndex = cur.index - 1
+      const html = cur.history[newIndex]
+      setLocalVersionHistory((prev) => ({ ...prev, [versionId]: { ...cur, index: newIndex } }))
+      setGeneratedHtml(html)
+      setCanUndo(canUndoFromHistory(cur.history.length, newIndex))
+      setCanRedo(canRedoFromHistory(cur.history.length, newIndex))
+      setVersions((prev) => prev.map((v) => (getVersionId(v) === versionId ? { ...v, html } : v)))
+      return
+    }
+    const v = versions.find((x) => getVersionId(x) === versionId)
+    const hist = v?.htmlHistory ?? []
+    const idx = v?.currentIndex ?? 0
+    if (idx <= 0) return
+    try {
+      const res = await fetch(versionApiUrl("/api/undoHtml"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ versionId }),
+      })
+      if (!res.headers.get("content-type")?.includes("application/json")) return
+      const data = await res.json()
+      if (data.success && data.html !== undefined) {
+        const newIdx = typeof data.currentIndex === "number" ? data.currentIndex : Math.max(0, idx - 1)
+        setGeneratedHtml(data.html)
+        setCanUndo(typeof data.canUndo === "boolean" ? data.canUndo : canUndoFromHistory(hist.length, newIdx))
+        setCanRedo(typeof data.canRedo === "boolean" ? data.canRedo : canRedoFromHistory(hist.length, newIdx))
+        setVersions((prev) => prev.map((v) => (getVersionId(v) === versionId ? { ...v, html: data.html, currentIndex: newIdx } : v)))
+      }
+    } catch {
+      // Network/CORS or server down
+    }
+  }, [selectedVersionId, versions, localVersionHistory])
+
+  const handleRedo = useCallback(async () => {
+    const versionId = selectedVersionId ?? (versions.length > 0 ? getVersionId(versions[0]) : null)
+    if (!versionId) return
+    const isTemp = versionId.startsWith("temp-")
+    if (isTemp) {
+      const cur = localVersionHistory[versionId]
+      if (!cur || cur.index >= cur.history.length - 1) return
+      const newIndex = cur.index + 1
+      const html = cur.history[newIndex]
+      setLocalVersionHistory((prev) => ({ ...prev, [versionId]: { ...cur, index: newIndex } }))
+      setGeneratedHtml(html)
+      setCanUndo(canUndoFromHistory(cur.history.length, newIndex))
+      setCanRedo(canRedoFromHistory(cur.history.length, newIndex))
+      setVersions((prev) => prev.map((v) => (getVersionId(v) === versionId ? { ...v, html } : v)))
+      return
+    }
+    const v = versions.find((x) => getVersionId(x) === versionId)
+    const hist = v?.htmlHistory ?? []
+    const idx = v?.currentIndex ?? 0
+    if (hist.length === 0 || idx >= hist.length - 1) return
+    try {
+      const res = await fetch(versionApiUrl("/api/redoHtml"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ versionId }),
+      })
+      if (!res.headers.get("content-type")?.includes("application/json")) return
+      const data = await res.json()
+      if (data.success && data.html !== undefined) {
+        const newIdx = typeof data.currentIndex === "number" ? data.currentIndex : Math.min(hist.length - 1, idx + 1)
+        setGeneratedHtml(data.html)
+        setCanUndo(typeof data.canUndo === "boolean" ? data.canUndo : canUndoFromHistory(hist.length, newIdx))
+        setCanRedo(typeof data.canRedo === "boolean" ? data.canRedo : canRedoFromHistory(hist.length, newIdx))
+        setVersions((prev) => prev.map((x) => (getVersionId(x) === versionId ? { ...x, html: data.html, currentIndex: newIdx } : x)))
+      }
+    } catch {
+      // Network/CORS or server down
+    }
+  }, [selectedVersionId, versions, localVersionHistory])
 
   if (isCheckingAuth || !isAuthenticated) {
     return (
@@ -504,28 +663,52 @@ useEffect(() => {
       const nextVersionNumber = versionCounter + 1
       setVersionCounter(nextVersionNumber)
       setGeneratedHtml(data.html)
-
       const email = localStorage.getItem("mu_email")
+      const tempId = `temp-${Date.now()}`
+      const optimisticVersion: PromptVersion = {
+        _id: tempId,
+        prompt,
+        html: data.html,
+        createdAt: new Date().toISOString(),
+        versionNumber: nextVersionNumber,
+        theme: selectedTheme,
+        htmlHistory: [data.html],
+        currentIndex: 0,
+      }
+      setVersions((prev) => [optimisticVersion, ...prev])
+      setSelectedVersionId(tempId)
+      setLocalVersionHistory((prev) => ({ ...prev, [tempId]: { history: [data.html], index: 0 } }))
+      setCanUndo(false)
+      setCanRedo(false)
 
-      // 📌 Save version in DB
-      await fetch("https://api.mastersunion.org/api/saveVersion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          prompt,
-          html: data.html,
-          versionNumber: nextVersionNumber,
-          theme: selectedTheme,
-        }),
-      })
-
-      // 📌 Reload history after save
-      const historyRes = await fetch(`https://api.mastersunion.org/api/getVersions/${email}`)
-      const historyData = await historyRes.json()
-      if (historyData.success) {
-        setVersions(historyData.data)
-        setSelectedVersionId(historyData.data[0]._id)
+      try {
+        const saveRes = await fetch(versionApiUrl("/api/saveVersion"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            prompt,
+            html: data.html,
+            versionNumber: nextVersionNumber,
+            theme: selectedTheme,
+          }),
+        })
+        if (saveRes.ok) {
+          const historyRes = await fetch(versionApiUrl(`/api/getVersions/${encodeURIComponent(email ?? "")}`))
+          const historyData = await historyRes.json()
+          if (historyData.success && Array.isArray(historyData.data) && historyData.data.length > 0) {
+            const list = (historyData.data as unknown[]).map(normalizeVersionFromApi)
+            setVersions(list)
+            setSelectedVersionId(getVersionId(list[0]) || null)
+            setLocalVersionHistory((prev) => {
+              const next = { ...prev }
+              delete next[tempId]
+              return next
+            })
+          }
+        }
+      } catch (_) {
+        // Keep optimistic version if API fails
       }
     } catch (err: any) {
       setError(err.message || "An error occurred")
@@ -535,36 +718,50 @@ useEffect(() => {
   }
 
   const handleVersionSelect = (versionId: string) => {
-  const version = versions.find(v => v._id === versionId)
-  if (!version) return
-
-  setSelectedVersionId(versionId)
-  setGeneratedHtml(version.html)
-  setHasGenerated(true)
-  
-  // Set theme from version if available, otherwise keep current theme
-  if (version.theme) {
-    setSelectedTheme(version.theme)
+    const version = versions.find((v) => getVersionId(v) === versionId)
+    if (!version) return
+    setSelectedVersionId(versionId)
+    setGeneratedHtml(version.html)
+    setHasGenerated(true)
+    if (version.theme) setSelectedTheme(version.theme)
+    const local = localVersionHistory[versionId]
+    if (local) {
+      setCanUndo(canUndoFromHistory(local.history.length, local.index))
+      setCanRedo(canRedoFromHistory(local.history.length, local.index))
+    } else {
+      const hist = version.htmlHistory ?? []
+      const idx = version.currentIndex ?? 0
+      setCanUndo(canUndoFromHistory(hist.length, idx))
+      setCanRedo(canRedoFromHistory(hist.length, idx))
+    }
+    setCurrentPrompt("")
   }
-
-  // Reset sidebar input when selecting history
-  setCurrentPrompt("")
-};
-
-
 
   const handlePreviewHtmlChange = (updatedHtml: string) => {
     setGeneratedHtml(updatedHtml)
-
-    if (selectedVersionId) {
-      setVersions(prev =>
-        prev.map(v => v._id === selectedVersionId ? { ...v, html: updatedHtml } : v)
-      )
+    if (!selectedVersionId) return
+    setVersions((prev) =>
+      prev.map((v) => (getVersionId(v) === selectedVersionId ? { ...v, html: updatedHtml } : v))
+    )
+    const isTemp = selectedVersionId.startsWith("temp-")
+    if (isTemp) {
+      setLocalVersionHistory((prev) => {
+        const cur = prev[selectedVersionId]
+        if (!cur) return prev
+        const newHistory = cur.history.slice(0, cur.index + 1)
+        newHistory.push(updatedHtml)
+        return { ...prev, [selectedVersionId]: { history: newHistory, index: newHistory.length - 1 } }
+      })
+      setCanUndo(true)
+      setCanRedo(false)
+      return
     }
+    // Server version: do NOT save here. Save only once when user turns edit mode OFF.
   }
 
-  const selectedVersion = versions.find(v => v._id === selectedVersionId)
+  const selectedVersion = versions.find((v) => getVersionId(v) === selectedVersionId)
   const activeVersionLabel = selectedVersion ? `Version ${selectedVersion.versionNumber}` : undefined
+  const effectiveVersionId = selectedVersionId ?? (versions.length > 0 ? getVersionId(versions[0]) : null)
 
   const handleNewChat = () => {
     setSelectedVersionId(null)
@@ -623,13 +820,13 @@ useEffect(() => {
                 {versions.length === 0 ? (
                   <p>No versions yet</p>
                 ) : (
-                  versions.map(version => (
+                  versions.map((version) => (
                     <button
-                      key={version._id}
+                      key={getVersionId(version)}
                       type="button"
-                      onClick={() => handleVersionSelect(version._id)}
+                      onClick={() => handleVersionSelect(getVersionId(version))}
                       className={`${styles.versionItem} ${
-                        selectedVersionId === version._id ? styles.versionItemActive : ""
+                        selectedVersionId === getVersionId(version) ? styles.versionItemActive : ""
                       }`}
                     >
                       <div className={styles.versionHeader}>
@@ -758,15 +955,40 @@ useEffect(() => {
 
   {/* Show Preview Only when version is selected or generated */}
   {(selectedVersionId || hasGenerated) && (
-    
     <Preview
       html={generatedHtml}
       isLoading={isLoading}
       activeVersionLabel={activeVersionLabel}
       onHtmlChange={handlePreviewHtmlChange}
-      onEditModeChange={setIsPreviewEditMode}
+      onEditModeChange={(isEdit, latestHtml) => {
+        setIsPreviewEditMode(isEdit)
+        const versionId = selectedVersionId
+        if (isEdit) {
+          editSessionHtmlRef.current = generatedHtml
+          hasSavedThisEditSessionRef.current = false
+        } else {
+          const htmlToSave = latestHtml !== undefined ? latestHtml : generatedHtml
+          if (versionId && htmlToSave && !versionId.startsWith("temp-")) {
+            const snapshot = editSessionHtmlRef.current
+            const changed = snapshot !== htmlToSave
+            const notSavedYet = !hasSavedThisEditSessionRef.current
+            if (changed && notSavedYet) {
+              hasSavedThisEditSessionRef.current = true
+              persistEditedHtml(versionId, htmlToSave).catch(() => {
+                hasSavedThisEditSessionRef.current = false
+              })
+            }
+            editSessionHtmlRef.current = null
+          }
+        }
+      }}
       selectedTheme={selectedTheme}
       onNewChat={handleNewChat}
+      selectedVersionId={effectiveVersionId}
+      canUndo={canUndo}
+      canRedo={canRedo}
+      onUndo={handleUndo}
+      onRedo={handleRedo}
     />
   )}
  
