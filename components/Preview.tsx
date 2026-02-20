@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, ChangeEvent } from "react"
 import dynamic from "next/dynamic"
 import styles from "./Preview.module.css"
 import ProfileMenu from "./ProfileMenu"
+import { versionApiUrl } from "@/lib/versionApi"
 
 const DotLottieReact = dynamic(() => import("@lottiefiles/dotlottie-react").then((mod) => mod.DotLottieReact), {
   ssr: false,
@@ -85,10 +86,24 @@ interface PreviewProps {
   selectedTheme?: "mastersunion" | "tetr"
   onNewChat?: () => void
   selectedVersionId?: string | null
-  canUndo?: boolean
-  canRedo?: boolean
-  onUndo?: () => void
-  onRedo?: () => void
+  /** Number of entries in current version's htmlHistory (for History dropdown) */
+  versionHistoryLength?: number
+  /** Current index in htmlHistory; dropdown selection */
+  versionCurrentIndex?: number
+  /** Called when user selects a different version from the History dropdown */
+  onVersionIndexChange?: (versionId: string, index: number) => void
+  /** DB version id (not temp) for direct live link; when set, opens /live/[id]?index=...; when temp, use onOpenDirectLinkTemp */
+  liveVersionId?: string | null
+  /** currentIndex for live link (htmlHistory[currentIndex]) */
+  liveCurrentIndex?: number
+  /** When version is temp (not saved yet), call this to open current HTML in a new window */
+  onOpenDirectLinkTemp?: () => void
+  /** When true, Direct link button is disabled (e.g. when DB has no saved versions) */
+  directLinkDisabled?: boolean
+  /** When true, Delete version button is enabled (more than one slot in history) */
+  canDeleteVersion?: boolean
+  /** Called to delete the version slot at the given index */
+  onDeleteVersion?: (versionId: string, index: number) => void
 }
 
 const getIframeDocument = (iframe: HTMLIFrameElement | null) => {
@@ -812,14 +827,20 @@ export default function Preview({
   selectedTheme = "mastersunion",
   onNewChat,
   selectedVersionId,
-  canUndo = false,
-  canRedo = false,
-  onUndo,
-  onRedo,
+  versionHistoryLength = 0,
+  versionCurrentIndex = 0,
+  onVersionIndexChange,
+  liveVersionId = null,
+  liveCurrentIndex = 0,
+  onOpenDirectLinkTemp,
+  directLinkDisabled = false,
+  canDeleteVersion = false,
+  onDeleteVersion,
 }: PreviewProps) {
   const [displayHtml, setDisplayHtml] = useState(html)
   const [isEditMode, setIsEditMode] = useState(false)
   const [iframeReady, setIframeReady] = useState(false)
+  const [showDeleteVersionConfirm, setShowDeleteVersionConfirm] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const skipNextHtmlSync = useRef(false)
   const persistEditedHtmlRef = useRef<() => string | null>(() => null)
@@ -1272,8 +1293,7 @@ export default function Preview({
       skipNextHtmlSync.current = false
       return
     }
-
-    setDisplayHtml((current) => (current === html ? current : html))
+    setDisplayHtml(html)
     setIsEditMode(false)
   }, [html])
 
@@ -3381,35 +3401,69 @@ export default function Preview({
             View full page
           </button>
           <div className={styles.editModeGroup}>
-            {selectedVersionId && (
-              <>
-                <button
-                  className={styles.undoRedoButton}
-                  onClick={onUndo}
-                  disabled={!canUndo || isLoading}
-                  type="button"
-                  title="Undo"
+            {selectedVersionId && versionHistoryLength > 0 && (
+              <div className={styles.historyDropdownWrap}>
+                <label htmlFor="history-select" className={styles.historyDropdownLabel}>
+                  History
+                </label>
+                <select
+                  id="history-select"
+                  className={styles.historyDropdown}
+                  value={String(Math.min(Math.max(0, versionCurrentIndex), versionHistoryLength - 1))}
+                  onChange={(e) => {
+                    const idx = parseInt(e.target.value, 10)
+                    if (!Number.isNaN(idx) && onVersionIndexChange) onVersionIndexChange(selectedVersionId, idx)
+                  }}
+                  disabled={isLoading}
+                  title="Select version"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M3 10h10a5 5 0 0 1 5 5v2" />
-                    <path d="M7 14 3 10l4-4" />
-                  </svg>
-                  Undo
-                </button>
-                <button
-                  className={styles.undoRedoButton}
-                  onClick={onRedo}
-                  disabled={!canRedo || isLoading}
-                  type="button"
-                  title="Redo"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10H11a5 5 0 0 0-5 5v2" />
-                    <path d="M17 14l4 4 4-4" />
-                  </svg>
-                  Redo
-                </button>
-              </>
+                  {Array.from({ length: versionHistoryLength }, (_, i) => (
+                    <option key={i} value={String(i)}>
+                      Version {i + 1}
+                    </option>
+                  ))}
+                </select>
+                {canDeleteVersion && onDeleteVersion && (
+                  <div style={{ position: "relative", display: "inline-flex" }}>
+                    <button
+                      type="button"
+                      className={styles.undoRedoButton}
+                      title="Delete this version"
+                      disabled={isLoading}
+                      onClick={() => setShowDeleteVersionConfirm(true)}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18" />
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                      Delete
+                    </button>
+                    {showDeleteVersionConfirm && (
+                      <div className={styles.deleteConfirmPopover}>
+                        <p>Delete this version?</p>
+                        <div className={styles.deleteConfirmPopoverActions}>
+                          <button type="button" onClick={() => setShowDeleteVersionConfirm(false)}>
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const idx = Math.min(Math.max(0, versionCurrentIndex), versionHistoryLength - 1)
+                              onDeleteVersion(selectedVersionId!, idx)
+                              setShowDeleteVersionConfirm(false)
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
             <button
               className={`${styles.editButton} ${isEditMode ? styles.editButtonActive : ""}`}
@@ -3426,6 +3480,44 @@ export default function Preview({
                 {isEditMode ? "ON" : "OFF"}
               </span>
             </button>
+            <button
+              className={styles.undoRedoButton}
+              type="button"
+              title="Coming soon"
+              disabled
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 19l7-7 3 3-7 7-3-3" />
+                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+              </svg>
+              Publish
+            </button>
+            {selectedVersionId && (
+              <button
+                className={styles.undoRedoButton}
+                type="button"
+                title={directLinkDisabled ? "Save a version to get a direct link" : "Open live preview in new tab"}
+                disabled={directLinkDisabled}
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    if (liveVersionId && !liveVersionId.startsWith("temp-")) {
+                      const idx = typeof liveCurrentIndex === "number" ? liveCurrentIndex : 0
+                      const liveUrl = versionApiUrl(`/api/live/${liveVersionId}?index=${idx}`)
+                      window.open(liveUrl, "_blank", "noopener,noreferrer")
+                    } else {
+                      onOpenDirectLinkTemp?.()
+                    }
+                  }
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+                Direct link
+              </button>
+            )}
           </div>
           <ProfileMenu onNewChat={onNewChat} />
         </div>
