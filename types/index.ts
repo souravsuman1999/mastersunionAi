@@ -8,7 +8,7 @@ export interface DesignConfig {
   shadow: boolean
 }
 
-export interface GenerateRequestBody {
+export interface GenerateRequestBody { 
   prompt: string
   config: DesignConfig
 }
